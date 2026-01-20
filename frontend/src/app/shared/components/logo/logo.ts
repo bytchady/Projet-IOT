@@ -8,10 +8,8 @@ import {Component, OnInit} from '@angular/core';
 })
 export class Logo implements OnInit {
   name1!: string;
-  name2!: string;
 
   ngOnInit() {
-    this.name1 = "Thermo";
-    this.name2 = "Cesi";
+    this.name1 = "ThermoCESI";
   }
 }
