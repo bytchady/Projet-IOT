@@ -1,19 +1,19 @@
-import {Component, OnInit, HostListener} from '@angular/core';
-import {SearchBar} from '../search-bar/search-bar';
-import {RoomCard} from '../room-card/room-card';
-import {NgFor} from '@angular/common';
-import {FormsModule} from '@angular/forms';
-import {Room} from '../../../models/room';
-import {RoomsService} from '../../../services/rooms.service';
-import {ServerMessageService} from '../../../services/serverMessages.service';
+import { Component, OnInit, HostListener } from '@angular/core';
+import { SearchBar } from '../search-bar/search-bar';
+import { RoomCard } from '../room-card/room-card';
+import { FormsModule } from '@angular/forms';
+import { Room } from '../../../models/room';
+import { RoomsService } from '../../../services/rooms.service';
+import { ServerMessageService } from '../../../services/serverMessages.service';
 
 @Component({
   selector: 'app-home-component',
-  imports: [SearchBar, RoomCard, NgFor, FormsModule],
+  imports: [SearchBar, RoomCard, FormsModule],
   templateUrl: './home-component.html',
   styleUrls: ['./home-component.scss'],
 })
 export class HomeComponent implements OnInit {
+  allRooms: Room[] = [];
   rooms: Room[] = [];
   pagedRooms: Room[] = [];
   newRoomName: string = '';
@@ -25,37 +25,17 @@ export class HomeComponent implements OnInit {
 
   isMobile: boolean = window.innerWidth < 576;
 
-  message: string = '';
-  isError: boolean = false;
-
   constructor(
     private roomsService: RoomsService,
     private serverMessageService: ServerMessageService
   ) {}
 
   ngOnInit() {
-    this.rooms = this.roomsService.getRooms();
+    this.allRooms = this.roomsService.getRooms();
+    this.rooms = [...this.allRooms];
     this.updatePageSettings();
     this.updatePagedRooms();
-
-    // avec back
-    // this.loadRooms();
   }
-
-  // avec back
-  // loadRooms() {
-  //   this.roomService.getRooms().subscribe({
-  //     next: (data) => {
-  //       this.rooms = data.filter(room => room.isExists);
-  //       this.rooms.sort((a, b) => a.name.localeCompare(b.name));
-  //       this.updatePageSettings();
-  //       this.updatePagedRooms();
-  //     },
-  //     error: (err) => {
-  //       console.error('Erreur récupération salles', err);
-  //     },
-  //   });
-  // }
 
   @HostListener('window:resize', ['$event'])
   onResize(event: any) {
@@ -70,13 +50,40 @@ export class HomeComponent implements OnInit {
     this.serverMessageService.showMessage(result.message, !result.success);
 
     if (result.success && result.room) {
-      this.rooms = this.roomsService.getRooms();
-      const index = this.rooms.findIndex(r => r.name === result.room!.name);
+      this.allRooms = this.roomsService.getRooms();
+      const index = this.allRooms.findIndex(r => r.name === result.room!.name);
       this.currentPage = Math.floor(index / this.pageSize) + 1;
       this.updatePagedRooms();
     }
 
     this.newRoomName = '';
+  }
+
+  onSearchRoom(query: string) {
+    this.currentPage = 1;
+
+    if (!query) {
+      this.rooms = [...this.allRooms];
+      this.updatePagedRooms();
+      return;
+    }
+
+    const filteredRooms = this.allRooms.filter(room =>
+      room.name.toLowerCase().includes(query.toLowerCase())
+    );
+
+    if (filteredRooms.length === 0) {
+      this.rooms = [];
+      this.pagedRooms = [];
+      this.serverMessageService.showMessage(
+        `Aucun résultat correspondant à "${query}"`,
+        true
+      );
+      return;
+    }
+
+    this.rooms = filteredRooms;
+    this.updatePagedRooms();
   }
 
   updatePageSettings() {
@@ -91,8 +98,11 @@ export class HomeComponent implements OnInit {
   }
 
   updatePagedRooms() {
+    if (this.currentPage > this.totalPages()) this.currentPage = 1;
+
     const start = (this.currentPage - 1) * this.pageSize;
     const end = start + this.pageSize;
+
     this.pagedRooms = this.rooms.slice(start, end);
   }
 
@@ -101,9 +111,7 @@ export class HomeComponent implements OnInit {
     let start = Math.max(this.currentPage - 2, 1);
     let end = Math.min(start + 3, total);
 
-    if (end - start < 3) {
-      start = Math.max(end - 3, 1);
-    }
+    if (end - start < 3) start = Math.max(end - 3, 1);
 
     const pages: number[] = [];
     for (let i = start; i <= end; i++) pages.push(i);

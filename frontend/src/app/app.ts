@@ -24,6 +24,4 @@ import {AsyncPipe, NgIf} from '@angular/common';
 })
 export class App {
   constructor(public serverMessageService: ServerMessageService) {}
-  // message: string = '';
-  // isError: boolean = false;
 }
