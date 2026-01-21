@@ -1,4 +1,5 @@
-import {Component, Input, OnInit} from '@angular/core';
+import { Component, Input, OnInit } from '@angular/core';
+import { Room } from '../../../models/room';
 
 @Component({
   selector: 'app-room-card',
@@ -7,11 +8,11 @@ import {Component, Input, OnInit} from '@angular/core';
   styleUrl: './room-card.scss',
 })
 export class RoomCard implements OnInit {
-  @Input() nameRoom!: string;
+  @Input() room! : Room;
 
   ngOnInit() {
-    if (!this.nameRoom) {
-      this.nameRoom = "Aucune salle";
+    if (!this.room.name) {
+      this.room.name= "Aucune salle";
     }
   }
 }

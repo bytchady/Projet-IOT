@@ -3,6 +3,9 @@ import {SearchBar} from '../search-bar/search-bar';
 import {RoomCard} from '../room-card/room-card';
 import {NgFor} from '@angular/common';
 import {FormsModule} from '@angular/forms';
+import {Room} from '../../../models/room';
+import {RoomsService} from '../../../services/rooms.service';
+import {ServerMessageService} from '../../../services/serverMessages.service';
 
 @Component({
   selector: 'app-home-component',
@@ -11,8 +14,8 @@ import {FormsModule} from '@angular/forms';
   styleUrls: ['./home-component.scss'],
 })
 export class HomeComponent implements OnInit {
-  rooms: { name: string }[] = [];
-  pagedRooms: { name: string }[] = [];
+  rooms: Room[] = [];
+  pagedRooms: Room[] = [];
   newRoomName: string = '';
 
   currentPage: number = 1;
@@ -22,16 +25,37 @@ export class HomeComponent implements OnInit {
 
   isMobile: boolean = window.innerWidth < 576;
 
-  ngOnInit() {
-    // Remplissage des salles
-    for (let i = 101; i <= 139; i++) {
-      this.rooms.push({ name: `${i}` });
-    }
+  message: string = '';
+  isError: boolean = false;
 
+  constructor(
+    private roomsService: RoomsService,
+    private serverMessageService: ServerMessageService
+  ) {}
+
+  ngOnInit() {
+    this.rooms = this.roomsService.getRooms();
     this.updatePageSettings();
     this.updatePagedRooms();
+
+    // avec back
+    // this.loadRooms();
   }
 
+  // avec back
+  // loadRooms() {
+  //   this.roomService.getRooms().subscribe({
+  //     next: (data) => {
+  //       this.rooms = data.filter(room => room.isExists);
+  //       this.rooms.sort((a, b) => a.name.localeCompare(b.name));
+  //       this.updatePageSettings();
+  //       this.updatePagedRooms();
+  //     },
+  //     error: (err) => {
+  //       console.error('Erreur récupération salles', err);
+  //     },
+  //   });
+  // }
 
   @HostListener('window:resize', ['$event'])
   onResize(event: any) {
@@ -40,24 +64,20 @@ export class HomeComponent implements OnInit {
     this.updatePagedRooms();
   }
 
-  addRoom() {
-    if (!this.newRoomName.trim()) return;
+  onAddRoom() {
+    const result = this.roomsService.createRoom(this.newRoomName);
 
-    // Ajout en tête pour voir la salle immédiatement
-    this.rooms.unshift({
-      name: this.newRoomName.trim()
-    });
+    this.serverMessageService.showMessage(result.message, !result.success);
 
-    // Reset champ
+    if (result.success && result.room) {
+      this.rooms = this.roomsService.getRooms();
+      const index = this.rooms.findIndex(r => r.name === result.room!.name);
+      this.currentPage = Math.floor(index / this.pageSize) + 1;
+      this.updatePagedRooms();
+    }
+
     this.newRoomName = '';
-
-    // Revenir à la première page
-    this.currentPage = 1;
-
-    // Mise à jour de l’affichage
-    this.updatePagedRooms();
   }
-
 
   updatePageSettings() {
     if (this.isMobile) {

@@ -21,8 +21,8 @@
 
       <button
         class="btn w-100 btn-outline-secondary"
-        (click)="addRoom()"
-        [disabled]="!newRoomName?.trim()">
+        (click)="onAddRoom()"
+        [disabled]="!newRoomName.trim()">
         ➕ Ajouter la salle
       </button>
     </div>
@@ -41,7 +41,7 @@
     <div class="flex-grow-1 overflow-auto overflow-x-hidden">
       <div class="row g-4">
         <div class="col-12 col-sm-6 col-md-4" *ngFor="let room of pagedRooms">
-          <app-room-card [nameRoom]="room.name"></app-room-card>
+          <app-room-card [room]="room"></app-room-card>
         </div>
 
         <nav class="bottom-0 mt-3 d-flex justify-content-center py-2" style="z-index:10;">
