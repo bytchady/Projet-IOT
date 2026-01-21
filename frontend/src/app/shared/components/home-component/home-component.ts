@@ -1,26 +1,29 @@
-import { Component, OnInit, HostListener } from '@angular/core';
-import { SearchBar } from '../search-bar/search-bar';
-import { RoomCard } from '../room-card/room-card';
-import { NgFor } from '@angular/common';
+import {Component, OnInit, HostListener} from '@angular/core';
+import {SearchBar} from '../search-bar/search-bar';
+import {RoomCard} from '../room-card/room-card';
+import {NgFor} from '@angular/common';
+import {FormsModule} from '@angular/forms';
 
 @Component({
   selector: 'app-home-component',
-  imports: [SearchBar, RoomCard, NgFor],
+  imports: [SearchBar, RoomCard, NgFor, FormsModule],
   templateUrl: './home-component.html',
   styleUrls: ['./home-component.scss'],
 })
 export class HomeComponent implements OnInit {
   rooms: { name: string }[] = [];
   pagedRooms: { name: string }[] = [];
+  newRoomName: string = '';
 
   currentPage: number = 1;
   rowsPerPage: number = 2;
   cardsPerRow: number = 3;
   pageSize: number = this.rowsPerPage * this.cardsPerRow;
 
-  isMobile: boolean = window.innerWidth < 576; // XS
+  isMobile: boolean = window.innerWidth < 576;
 
   ngOnInit() {
+    // Remplissage des salles
     for (let i = 101; i <= 139; i++) {
       this.rooms.push({ name: `${i}` });
     }
@@ -29,12 +32,32 @@ export class HomeComponent implements OnInit {
     this.updatePagedRooms();
   }
 
+
   @HostListener('window:resize', ['$event'])
   onResize(event: any) {
     this.isMobile = event.target.innerWidth < 576;
     this.updatePageSettings();
     this.updatePagedRooms();
   }
+
+  addRoom() {
+    if (!this.newRoomName.trim()) return;
+
+    // Ajout en tête pour voir la salle immédiatement
+    this.rooms.unshift({
+      name: this.newRoomName.trim()
+    });
+
+    // Reset champ
+    this.newRoomName = '';
+
+    // Revenir à la première page
+    this.currentPage = 1;
+
+    // Mise à jour de l’affichage
+    this.updatePagedRooms();
+  }
+
 
   updatePageSettings() {
     if (this.isMobile) {

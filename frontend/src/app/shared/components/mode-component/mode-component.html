@@ -1,0 +1,15 @@
+<div class="d-flex align-items-center gap-2">
+  <span>🔆</span>
+
+  <div class="form-check form-switch m-0">
+    <input
+      class="form-check-input"
+      type="checkbox"
+      role="switch"
+      [checked]="isDarkMode"
+      (change)="toggleTheme()"
+    />
+  </div>
+
+  <span>🌙</span>
+</div>

@@ -1,55 +1,36 @@
 <div class="row">
   <!-- Partie gauche -->
-  <div class="col-md-6">
-    <p>Contenu gauche (infos, navigation, etc.)nom masculin
+  <div class="col-md-6 d-flex flex-column  p-4">
 
-      (anglais test, épreuve, du français têt)
+    <img
+      src="images/Cesi.jpg"
+      alt="CESI"
+      class="img-fluid rounded shadow border border-body mb-4"
+      style="max-height:380px; object-fit:cover;"
+    />
 
-      1. Épreuve psychologique impliquant une tâche à remplir identique pour tous les sujets, des conditions d'application rigoureuses et une technique précise pour l'appréciation du succès ou de l'échec. (Il existe des tests de niveau et des tests projectifs.)
-      2. Essai d'un produit, d'un appareil pour vérifier son action, son fonctionnement.
-      3. (En apposition, avec ou sans trait d'union.) Se dit de quelque chose qui sert de repère ou de référence : Ville-test, élections tests.
-      4. Toute circonstance qui permet d'éprouver, de mesurer quelque chose : Ce sera un test de bonne volonté.
-      5. Examen, ou épreuve standardisée et étalonnée, permettant d'évaluer des aptitudes physiques ou psychologiques chez un individu donné.
-      6. Examen complémentaire pratiqué pour orienter ou confirmer le diagnostic d'une maladie.
-      7. Examen diagnostique basé sur l'apparition ou la non-apparition d'un phénomène chimique (coloration d'un liquide, par exemple), biologique (œdème cutané, par exemple), physiologique (mouvement réflexe, par exemple), après mise en œuvre d'un procédé, administration d'une substance ou action d'un stimulus.
-      8. Essai de production effectué en cours de forage au moyen d'un tester.
-      9. Synonyme de test-match.
-      Synonyme :
+    <div class="w-100" style="max-width:400px;">
+      <h4 class="mb-3 text-center">Créer une nouvelle salle</h4>
 
-      test-matchnom masculin
-      Contenu gauche (infos, navigation, etc.)nom masculin
+      <input
+        type="text"
+        class="form-control mb-3"
+        placeholder="Nom de la salle"
+        [(ngModel)]="newRoomName"
+      />
 
-      (anglais test, épreuve, du français têt)
-
-      1. Épreuve psychologique impliquant une tâche à remplir identique pour tous les sujets, des conditions d'application rigoureuses et une technique précise pour l'appréciation du succès ou de l'échec. (Il existe des tests de niveau et des tests projectifs.)
-      2. Essai d'un produit, d'un appareil pour vérifier son action, son fonctionnement.
-      3. (En apposition, avec ou sans trait d'union.) Se dit de quelque chose qui sert de repère ou de référence : Ville-test, élections tests.
-      4. Toute circonstance qui permet d'éprouver, de mesurer quelque chose : Ce sera un test de bonne volonté.
-      5. Examen, ou épreuve standardisée et étalonnée, permettant d'évaluer des aptitudes physiques ou psychologiques chez un individu donné.
-      6. Examen complémentaire pratiqué pour orienter ou confirmer le diagnostic d'une maladie.
-      7. Examen diagnostique basé sur l'apparition ou la non-apparition d'un phénomène chimique (coloration d'un liquide, par exemple), biologique (œdème cutané, par exemple), physiologique (mouvement réflexe, par exemple), après mise en œuvre d'un procédé, administration d'une substance ou action d'un stimulus.
-      8. Essai de production effectué en cours de forage au moyen d'un tester.
-      9. Synonyme de test-match.
-      Synonyme :
-
-      test-matchnom masculin
-
-      (anglais test, épreuve, du français têt)
-
-      1. Épreuve psychologique impliquant une tâche à remplir identique pour tous les sujets, des conditions d'application rigoureuses et une technique précise pour l'appréciation du succès ou de l'échec. (Il existe des tests de niveau et des tests projectifs.)
-      2. Essai d'un produit, d'un appareil pour vérifier son action, son fonctionnement.
-      3. (En apposition, avec ou sans trait d'union.) Se dit de quelque chose qui sert de repère ou de référence : Ville-test, élections tests.
-      4. Toute circonstance qui permet d'éprouver, de mesurer quelque chose : Ce sera un test de bonne volonté.
-      5. Examen, ou épreuve standardisée et étalonnée, permettant d'évaluer des aptitudes physiques ou psychologiques chez un individu donné.
-      6. Examen complémentaire pratiqué pour orienter ou confirmer le diagnostic d'une maladie.
-      7. Examen diagnostique basé sur l'apparition ou la non-apparition d'un phénomène chimique (coloration d'un liquide, par exemple), biologique (œdème cutané, par exemple), physiologique (mouvement réflexe, par exemple), après mise en œuvre d'un procédé, administration d'une substance ou action d'un stimulus.
-      8. Essai de production effectué en cours de forage au moyen d'un tester.
-      9. Synonyme de test-match.</p>
+      <button
+        class="btn w-100 btn-outline-secondary"
+        (click)="addRoom()"
+        [disabled]="!newRoomName?.trim()">
+        ➕ Ajouter la salle
+      </button>
+    </div>
   </div>
+
 
   <!-- Partie droite -->
   <div class="col-md-6 d-flex flex-column">
-    <!-- Search Bar -->
     <div class="mb-3">
       <h1>Salles</h1>
     </div>
@@ -57,17 +38,15 @@
       <app-search-bar></app-search-bar>
     </div>
 
-    <!-- Grille de room-cards -->
     <div class="flex-grow-1 overflow-auto overflow-x-hidden">
       <div class="row g-4">
         <div class="col-12 col-sm-6 col-md-4" *ngFor="let room of pagedRooms">
           <app-room-card [nameRoom]="room.name"></app-room-card>
         </div>
 
-        <nav class="position-sticky bottom-0 mt-3 d-flex justify-content-center bg-white py-2" style="z-index:10;">
+        <nav class="bottom-0 mt-3 d-flex justify-content-center py-2" style="z-index:10;">
           <!-- Pagination complète (desktop/tablette) -->
           <ul class="pagination mb-0 flex-wrap justify-content-center d-none d-sm-flex">
-            <!-- Bouton précédent -->
             <li class="page-item" [class.disabled]="currentPage === 1">
               <button
                 class="page-link"
@@ -77,7 +56,6 @@
               </button>
             </li>
 
-            <!-- Numéros de page -->
             <li class="page-item" *ngFor="let page of getVisiblePages()" [class.active]="currentPage === page">
               <button
                 class="page-link"
@@ -89,7 +67,6 @@
               </button>
             </li>
 
-            <!-- Bouton suivant -->
             <li class="page-item" [class.disabled]="currentPage === totalPages()">
               <button
                 class="page-link"
@@ -104,18 +81,18 @@
           <ul class="pagination mb-0 d-flex d-sm-none justify-content-center">
             <li class="page-item" [class.disabled]="currentPage === 1">
               <button
-                class="page-link"
+                class="page-link bg-body text-body border"
                 (click)="prevPage()"
-                style="background-color:#f0f0f0; color:#555; border:1px solid #dcdcdc; min-width:50px;">
+                style="min-width:50px;">
                 &lt;
               </button>
             </li>
 
             <li class="page-item" [class.disabled]="currentPage === totalPages()">
               <button
-                class="page-link"
+                class="page-link bg-body text-body border"
                 (click)="nextPage()"
-                style="background-color:#f0f0f0; color:#555; border:1px solid #dcdcdc; min-width:50px;">
+                style="min-width:50px;">
                 &gt;
               </button>
             </li>
