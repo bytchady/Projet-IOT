@@ -14,6 +14,7 @@ export class RoomsService {
     new Room('4', '104', 40, 15, 1, 1, 900, 19, 24, true),
     new Room('6', '106', 50, 20, 1, 2, 1000, 20, 25, true  ),
     new Room('7', '107', 40, 15, 1, 1, 900, 19, 24, true),
+    new Room('8', '108', 40, 15, 1, 1, 900, 19, 24, true),
   ];
 
   private idCounter: number;

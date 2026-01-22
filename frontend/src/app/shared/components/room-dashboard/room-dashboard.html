@@ -6,17 +6,21 @@
     @if (room) {
       <h2 class="mb-4">{{ room.name }} Dashboard</h2>
 
-      <div class="row">
-        @for (sensor of sensors; track sensor.id) {
-          <div class="col-md-6 mb-4">
-            <app-sensor-graph
-              [sensor]="sensor"
-              [color]="getSensorColor(sensor?.type?.name || '')"
-              [hours]="24">
-            </app-sensor-graph>
-          </div>
-        }
-      </div>
+      @if (sensors.length > 0) {
+        <div class="row">
+          @for (sensor of sensors; track sensor.id) {
+            <div class="col-md-6 mb-4">
+              <app-sensor-graph
+                [sensor]="sensor"
+                [color]="getSensorColor(sensor.type.name)"
+                [hours]="24">
+              </app-sensor-graph>
+            </div>
+          }
+        </div>
+      } @else {
+        <p>Loading sensors...</p>
+      }
     }
   </div>
 

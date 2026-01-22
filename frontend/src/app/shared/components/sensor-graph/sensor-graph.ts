@@ -1,4 +1,4 @@
-import { Component, OnInit, Input } from '@angular/core';
+import {Component, OnInit, Input, OnChanges} from '@angular/core';
 import {Measure} from '../../../models/measure';
 import {MeasuresService} from '../../../services/measures.services';
 import {Sensor} from '../../../models/sensor';
@@ -13,54 +13,60 @@ import {ChartData, ChartOptions, ChartType} from 'chart.js';
   ],
   styleUrls: ['./sensor-graph.scss']
 })
-export class SensorGraph implements OnInit {
+export class SensorGraph implements OnChanges {
+
   @Input() sensor!: Sensor;
   @Input() color: string = 'rgba(0,0,0,1)';
   @Input() hours: number = 24;
 
-  lineGraphData: ChartData<'line', number[], string> = { labels: [], datasets: [] };
-  lineGraphOptions: ChartOptions = {};
-  lineGraphType: ChartType = 'line';
+  chartData: ChartData<'line'> = { datasets: [] };
+  chartOptions: ChartOptions = {};
+  chartType: ChartType = 'line';
+  labels: string[] = [];
 
   constructor(private measuresService: MeasuresService) {}
 
-  ngOnInit(): void {
+  ngOnChanges(): void {
     if (!this.sensor) return;
 
+    this.loadData();
+  }
+
+  private loadData() {
     this.measuresService.getMeasuresBySensor(this.sensor, this.hours)
-      .subscribe((ms: Measure[]) => this.processData(ms));
+      .subscribe(ms => this.processData(ms));
   }
 
   private processData(measures: Measure[]) {
-    const hourlyData: number[] = Array(this.hours).fill(0);
-    const counts: number[] = Array(this.hours).fill(0);
+    const hourly = Array(this.hours).fill(0);
+    const count = Array(this.hours).fill(0);
 
     measures.forEach(m => {
       const hour = m.timestamp.getHours();
-      hourlyData[hour] += m.value;
-      counts[hour] += 1;
+      hourly[hour] += m.value;
+      count[hour]++;
     });
 
-    const avgData = hourlyData.map((v, i) => counts[i] ? parseFloat((v / counts[i]).toFixed(2)) : 0);
+    const averaged = hourly.map((v, i) => count[i] ? v / count[i] : 0);
 
-    this.lineGraphData = {
-      labels: Array.from({ length: this.hours }, (_, i) => `${i}:00`),
-      datasets: [{
-        data: avgData,
-        label: this.sensor.type.name,
-        borderColor: this.color,
-        backgroundColor: 'transparent',
-        fill: false
-      }]
+    this.labels = Array.from({ length: this.hours }, (_, i) => `${i}:00`);
+
+    this.chartData = {
+      labels: this.labels,
+      datasets: [
+        {
+          data: averaged,
+          label: this.sensor.type.name,
+          borderColor: this.color,
+          backgroundColor: 'transparent',
+          tension: 0.3
+        }
+      ]
     };
 
-    this.lineGraphOptions = {
+    this.chartOptions = {
       responsive: true,
-      plugins: { legend: { display: true } },
-      scales: {
-        x: { title: { display: true, text: 'Hour' } },
-        y: { title: { display: true, text: 'Value' } }
-      }
+      plugins: { legend: { display: true } }
     };
   }
 }

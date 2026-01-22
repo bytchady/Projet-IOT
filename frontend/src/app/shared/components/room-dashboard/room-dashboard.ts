@@ -30,27 +30,18 @@ export class RoomDashboard implements OnInit {
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
+    if (!id) return;
 
-    if (!id) {
-      console.error('Room id missing in route');
-      return;
-    }
+    const r = this.roomsService.getRoomById(id);
+    if (!r) return;
 
-    const foundRoom = this.roomsService.getRoomById(id);
-
-    if (!foundRoom) {
-      console.error('Room not found:', id);
-      return;
-    }
-
-    this.room = foundRoom;
+    this.room = r;
 
     this.roomSensorsService.getSensorsByRoom(this.room).subscribe(sensors => {
-      this.sensors = sensors;
-      console.log('Sensors loaded:', sensors);
+      console.log(r);
+      this.sensors = sensors || [];
     });
   }
-
 
   getSensorColor(sensorType: string): string {
     switch(sensorType) {
