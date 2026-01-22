@@ -1,6 +1,15 @@
-<div class="input-group rounded-pill" style="max-width: 400px; border: 1px solid black;">
-  <input type="text" class="form-control border-0 rounded-pill" placeholder="Rechercher...">
-  <span class="input-group-text bg-transparent border-0">
-    <i class="bi bi-search text-black"></i>
-  </span>
-</div>
+<form (submit)="onSearch(); $event.preventDefault()">
+  <div class="input-group rounded-pill border" style="max-width:400px;">
+    <input
+      type="text"
+      class="form-control border-0 rounded-pill bg-body text-body"
+      placeholder="Rechercher une salle..."
+      [(ngModel)]="searchValue"
+      name="search"
+    />
+
+    <button type="submit" class="input-group-text bg-transparent border-0">
+      <i class="bi bi-search text-body"></i>
+    </button>
+  </div>
+</form>

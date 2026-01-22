@@ -1,0 +1,8 @@
+<div class="card p-3 mb-3">
+  <h5>Evolution par heure de {{ sensor.type.name }}</h5>
+  <canvas baseChart
+          [data]="lineGraphData"
+          [options]="lineGraphOptions"
+          [type]="lineGraphType">
+  </canvas>
+</div>

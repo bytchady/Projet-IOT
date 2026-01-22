@@ -1,0 +1,24 @@
+<div class="min-vh-100 d-flex flex-column">
+  <app-header></app-header>
+
+  <div class="container-fluid flex-grow-1 py-3">
+    <!-- Affiche le header seulement si room existe -->
+    @if (room) {
+      <h2 class="mb-4">{{ room.name }} Dashboard</h2>
+
+      <div class="row">
+        @for (sensor of sensors; track sensor.id) {
+          <div class="col-md-6 mb-4">
+            <app-sensor-graph
+              [sensor]="sensor"
+              [color]="getSensorColor(sensor?.type?.name || '')"
+              [hours]="24">
+            </app-sensor-graph>
+          </div>
+        }
+      </div>
+    }
+  </div>
+
+  <app-footer></app-footer>
+</div>

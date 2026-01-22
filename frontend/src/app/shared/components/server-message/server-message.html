@@ -1,0 +1,8 @@
+@if (message) {
+  <div
+    class="alert"
+    [ngClass]="isError ? 'alert-danger' : 'alert-success'"
+    role="alert">
+    {{ message }}
+  </div>
+}

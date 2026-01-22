@@ -1,0 +1,13 @@
+<div class="d-flex align-items-center justify-content-between m-2">
+  <app-logo></app-logo>
+
+  @let message = serverMessageService.message$ | async;
+  @if (message) {
+    <app-server-message
+      [message]="message"
+      [isError]="serverMessageService.isError$ | async">
+    </app-server-message>
+  }
+
+  <app-mode-component></app-mode-component>
+</div>
