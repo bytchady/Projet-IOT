@@ -1,6 +1,6 @@
 export class Room {
-  id: string;
   constructor(
+    public id: string,
     public name: string,
     public volume: number,
     public glazedSurface: number,
@@ -9,7 +9,6 @@ export class Room {
     public co2Threshold: number,
     public minTempConfort: number,
     public maxTempConfort: number,
-    public isExists: boolean,) {
-    this.id = crypto.randomUUID().substring(0, 8);
-  }
+    public isExists: boolean
+  ) {}
 }

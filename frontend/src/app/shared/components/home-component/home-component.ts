@@ -1,10 +1,10 @@
 import { Component, OnInit, HostListener, ViewChild } from '@angular/core';
-import { SearchBar } from '../search-bar/search-bar';
-import { RoomCard } from '../room-card/room-card';
-import { FormsModule } from '@angular/forms';
-import { Room } from '../../../models/room';
-import { RoomsService } from '../../../services/rooms.service';
-import { ServerMessageService } from '../../../services/serverMessages.service';
+import {SearchBar} from '../search-bar/search-bar';
+import {RoomCard} from '../room-card/room-card';
+import {FormsModule} from '@angular/forms';
+import {Room} from '../../../models/room';
+import {RoomsService} from '../../../services/rooms.service';
+import {ServerMessageService} from '../../../services/serverMessages.service';
 
 @Component({
   selector: 'app-home-component',
@@ -48,12 +48,12 @@ export class HomeComponent implements OnInit {
 
   onAddRoom() {
     const result = this.roomsService.createRoom(this.newRoomName);
-
     this.serverMessageService.showMessage(result.message, !result.success);
 
     if (result.success && result.room) {
       this.allRooms = this.roomsService.getRooms();
-      const index = this.allRooms.findIndex(r => r.name === result.room!.name);
+      this.rooms = [...this.allRooms];
+      const index = this.rooms.findIndex(r => r.id === result.room!.id);
       this.currentPage = Math.floor(index / this.pageSize) + 1;
       this.updatePagedRooms();
     }
