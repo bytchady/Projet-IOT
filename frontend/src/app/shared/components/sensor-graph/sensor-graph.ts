@@ -1,4 +1,4 @@
-import {Component, OnInit, Input, OnChanges} from '@angular/core';
+import { Component, Input, OnChanges } from '@angular/core';
 import {Measure} from '../../../models/measure';
 import {MeasuresService} from '../../../services/measures.services';
 import {Sensor} from '../../../models/sensor';
@@ -28,7 +28,6 @@ export class SensorGraph implements OnChanges {
 
   ngOnChanges(): void {
     if (!this.sensor) return;
-
     this.loadData();
   }
 
@@ -38,25 +37,31 @@ export class SensorGraph implements OnChanges {
   }
 
   private processData(measures: Measure[]) {
-    const hourly = Array(this.hours).fill(0);
-    const count = Array(this.hours).fill(0);
+    // Aggregate per hour
+    const hourlySum = Array(this.hours).fill(0);
+    const hourlyCount = Array(this.hours).fill(0);
 
     measures.forEach(m => {
       const hour = m.timestamp.getHours();
-      hourly[hour] += m.value;
-      count[hour]++;
+      hourlySum[hour] += m.value;
+      hourlyCount[hour]++;
     });
 
-    const averaged = hourly.map((v, i) => count[i] ? v / count[i] : 0);
+    const averaged = hourlySum.map((sum, i) => hourlyCount[i] ? sum / hourlyCount[i] : 0);
 
-    this.labels = Array.from({ length: this.hours }, (_, i) => `${i}:00`);
+    // X-axis labels
+    this.labels = Array.from({ length: this.hours }, (_, i) => `${i.toString().padStart(2, '0')}:00`);
+
+    // Y-axis unit
+    const unit = this.sensor.type.name === 'Temperature' ? '°C' :
+      this.sensor.type.name === 'CO2' ? 'ppm' : '';
 
     this.chartData = {
       labels: this.labels,
       datasets: [
         {
           data: averaged,
-          label: this.sensor.type.name,
+          label: `${this.sensor.type.name} (${unit})`,
           borderColor: this.color,
           backgroundColor: 'transparent',
           tension: 0.3
@@ -66,7 +71,23 @@ export class SensorGraph implements OnChanges {
 
     this.chartOptions = {
       responsive: true,
-      plugins: { legend: { display: true } }
+      plugins: {
+        legend: { display: true }
+      },
+      scales: {
+        x: {
+          title: {
+            display: true,
+            text: 'Temps (heure)'
+          }
+        },
+        y: {
+          title: {
+            display: true,
+            text: unit
+          }
+        }
+      }
     };
   }
 }

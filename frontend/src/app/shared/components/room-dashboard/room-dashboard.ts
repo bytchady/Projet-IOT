@@ -1,19 +1,17 @@
 import { Component, OnInit } from '@angular/core';
-import {Footer} from "../footer/footer";
-import {Header} from "../header/header";
 import {ActivatedRoute} from '@angular/router';
 import {Room} from '../../../models/room';
 import {RoomsService} from '../../../services/rooms.service';
 import {Sensor} from '../../../models/sensor';
 import {RoomSensorsService} from '../../../services/roomSensors.service';
 import {SensorGraph} from '../sensor-graph/sensor-graph';
+import {FormsModule} from '@angular/forms';
 
 @Component({
   selector: 'app-room-dashboard',
   imports: [
-    Footer,
-    Header,
     SensorGraph,
+    FormsModule,
   ],
   templateUrl: './room-dashboard.html',
   styleUrl: './room-dashboard.scss',

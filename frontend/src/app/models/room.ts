@@ -7,8 +7,8 @@ export class Room {
     public nbDoors: number,
     public nbExteriorWalls: number,
     public co2Threshold: number,
-    public minTempConfort: number,
-    public maxTempConfort: number,
+    public minTempComfort: number,
+    public maxTempComfort: number,
     public isExists: boolean
   ) {}
 }

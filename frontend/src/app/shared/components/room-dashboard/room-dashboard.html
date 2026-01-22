@@ -1,19 +1,70 @@
-<div class="min-vh-100 d-flex flex-column">
-  <app-header></app-header>
+<div class="d-flex flex-column flex-md-row p-0">
+  <!-- Côté gauche : salle info + sliders -->
+  <div
+    class="col-12 col-md-3 d-flex flex-column p-4 bg-body text-body"
+    style="min-height: calc(100vh - 100px);"
+  >
+    <h3>Informations</h3>
 
-  <div class="container-fluid flex-grow-1 py-3">
-    <!-- Affiche le header seulement si room existe -->
     @if (room) {
-      <h2 class="mb-4">{{ room.name }} Dashboard</h2>
+      <ul class="list-unstyled mb-4">
+        <li class="mb-2 d-flex align-items-center">
+          <i class="bi bi-box-seam me-2"></i>
+          Volume: {{ room.volume }} m<sup>3</sup>
+        </li>
+        <li class="mb-2 d-flex align-items-center">
+          <i class="bi bi-door-open me-2"></i>
+          Portes: {{ room.nbDoors }}
+        </li>
+        <li class="mb-2 d-flex align-items-center">
+          <i class="bi bi-grid-3x2 me-2"></i>
+          Surfaces vitrées: {{ room.glazedSurface }} m<sup>2</sup>
+        </li>
+        <li class="mb-2 d-flex align-items-center">
+          <i class="bi bi-house me-2"></i>
+          Murs extérieurs: {{ room.nbExteriorWalls }}
+        </li>
+      </ul>
 
+      <div class="mb-3">
+        <label for="minTemp" class="form-label">
+          Min Comfort Temp: {{ room.minTempComfort }} °C
+        </label>
+        <input type="range" class="form-range" id="minTemp"
+               min="10" max="30" step="0.5"
+               [(ngModel)]="room.minTempComfort">
+      </div>
+
+      <div class="mb-3">
+        <label for="maxTemp" class="form-label">
+          Max Comfort Temp: {{ room.maxTempComfort }} °C
+        </label>
+        <input type="range" class="form-range" id="maxTemp"
+               min="10" max="30" step="0.5"
+               [(ngModel)]="room.maxTempComfort">
+      </div>
+    } @else {
+      <p>Select a room to see details</p>
+    }
+  </div>
+
+  <!-- Côté droit : scrollable -->
+  <div class="col-12 col-md-9 d-flex flex-column p-4"
+       style="height: calc(100vh - 100px); overflow-y: auto;">
+    <div class="mb-3">
+      <h1>@if (room) { Salle: {{room.name}}} </h1>
+    </div>
+
+    @if (room) {
       @if (sensors.length > 0) {
-        <div class="row">
+        <div class="d-flex flex-column gap-4">
           @for (sensor of sensors; track sensor.id) {
-            <div class="col-md-6 mb-4">
+            <div class="w-100">
               <app-sensor-graph
                 [sensor]="sensor"
                 [color]="getSensorColor(sensor.type.name)"
-                [hours]="24">
+                [hours]="24"
+                style="height:400px; width:100%;">
               </app-sensor-graph>
             </div>
           }
@@ -24,5 +75,4 @@
     }
   </div>
 
-  <app-footer></app-footer>
 </div>
