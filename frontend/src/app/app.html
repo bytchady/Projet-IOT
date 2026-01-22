@@ -3,11 +3,15 @@
   <!-- Logo -->
   <div class="d-flex align-items-center justify-content-between m-4">
     <app-logo></app-logo>
-    <app-server-message
-      *ngIf="(serverMessageService.message$ | async) as message"
-      [message]="message"
-      [isError]="(serverMessageService.isError$ | async)">
-    </app-server-message>
+
+    @let message = serverMessageService.message$ | async;
+    @if (message) {
+      <app-server-message
+        [message]="message"
+        [isError]="serverMessageService.isError$ | async">
+      </app-server-message>
+    }
+
     <app-mode-component></app-mode-component>
   </div>
 
@@ -19,4 +23,3 @@
   <!-- Footer -->
   <app-footer></app-footer>
 </div>
-

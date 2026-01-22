@@ -1,5 +1,5 @@
-import {Component, EventEmitter, Output} from '@angular/core';
-import {FormsModule} from '@angular/forms';
+import { Component, EventEmitter, Output } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-search-bar',
@@ -16,5 +16,9 @@ export class SearchBar {
 
   onSearch() {
     this.search.emit(this.searchValue.trim());
+  }
+
+  clear() {
+    this.searchValue = '';
   }
 }

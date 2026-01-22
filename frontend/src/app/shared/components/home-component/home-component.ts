@@ -1,4 +1,4 @@
-import { Component, OnInit, HostListener } from '@angular/core';
+import { Component, OnInit, HostListener, ViewChild } from '@angular/core';
 import { SearchBar } from '../search-bar/search-bar';
 import { RoomCard } from '../room-card/room-card';
 import { FormsModule } from '@angular/forms';
@@ -24,6 +24,8 @@ export class HomeComponent implements OnInit {
   pageSize: number = this.rowsPerPage * this.cardsPerRow;
 
   isMobile: boolean = window.innerWidth < 576;
+
+  @ViewChild(SearchBar) searchBar!: SearchBar;
 
   constructor(
     private roomsService: RoomsService,
@@ -73,18 +75,19 @@ export class HomeComponent implements OnInit {
     );
 
     if (filteredRooms.length === 0) {
-      this.rooms = [];
-      this.pagedRooms = [];
       this.serverMessageService.showMessage(
         `Aucun résultat correspondant à "${query}"`,
         true
       );
+      this.searchBar.clear();
       return;
     }
 
     this.rooms = filteredRooms;
     this.updatePagedRooms();
+    this.serverMessageService.clearMessage();
   }
+
 
   updatePageSettings() {
     if (this.isMobile) {
