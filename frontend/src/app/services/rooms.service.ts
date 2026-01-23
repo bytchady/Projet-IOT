@@ -43,8 +43,17 @@ export class RoomsService {
     return { success: true, message: 'Salle créée avec succès', room: newRoom };
   }
 
+  deleteRoom(id: string): boolean {
+    const room = this.rooms.find(r => r.id === id);
+    if (!room) return false;
+
+    room.isExists = false;
+    return true;
+  }
+
+
   getRooms(): Room[] {
-    return this.rooms;
+    return this.rooms.filter(r => r.isExists);
   }
 
   getRoomById(id: string): Room | undefined {

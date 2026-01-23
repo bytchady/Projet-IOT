@@ -1,56 +1,172 @@
 <div class="d-flex flex-column flex-md-row p-0">
   <!-- Côté gauche : salle info + sliders -->
-  <div
-    class="col-12 col-md-3 d-flex flex-column p-4 bg-body text-body"
-    style="min-height: calc(100vh - 100px);"
-  >
-    <h3>Informations</h3>
+  <div class="col-12 col-md-3 d-flex flex-column p-4 bg-body text-body">
 
-    @if (room) {
-      <ul class="list-unstyled mb-4">
-        <li class="mb-2 d-flex align-items-center">
-          <i class="bi bi-box-seam me-2"></i>
-          Volume: {{ room.volume }} m<sup>3</sup>
-        </li>
-        <li class="mb-2 d-flex align-items-center">
-          <i class="bi bi-door-open me-2"></i>
-          Portes: {{ room.nbDoors }}
-        </li>
-        <li class="mb-2 d-flex align-items-center">
-          <i class="bi bi-grid-3x2 me-2"></i>
-          Surfaces vitrées: {{ room.glazedSurface }} m<sup>2</sup>
-        </li>
-        <li class="mb-2 d-flex align-items-center">
-          <i class="bi bi-house me-2"></i>
-          Murs extérieurs: {{ room.nbExteriorWalls }}
-        </li>
-      </ul>
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h3>Informations</h3>
 
-      <div class="mb-3">
-        <label for="minTemp" class="form-label">
-          Min Comfort Temp: {{ room.minTempComfort }} °C
-        </label>
-        <input type="range" class="form-range" id="minTemp"
-               min="10" max="30" step="0.5"
-               [(ngModel)]="room.minTempComfort">
+      <div class="d-flex gap-2">
+        <!-- Bouton modifier / enregistrer -->
+        <button class="btn btn-sm btn-outline-primary" (click)="toggleEdit()">
+
+          @if (!isEditing) {
+            <i class="bi bi-pencil"></i>
+          } @else {
+            <i class="bi bi-save me-1"></i>
+            Enregistrer
+          }
+
+        </button>
+
+        <!-- Bouton supprimer -->
+        <button class="btn btn-sm btn-outline-danger" (click)="onDeleteRoom()">
+          <i class="bi bi-trash"></i>
+        </button>
       </div>
 
-      <div class="mb-3">
-        <label for="maxTemp" class="form-label">
-          Max Comfort Temp: {{ room.maxTempComfort }} °C
-        </label>
-        <input type="range" class="form-range" id="maxTemp"
-               min="10" max="30" step="0.5"
-               [(ngModel)]="room.maxTempComfort">
-      </div>
-    } @else {
-      <p>Select a room to see details</p>
-    }
+    </div>
+
+    <ul class="list-unstyled mb-4">
+
+      <!-- Volume -->
+      <li class="mb-2 d-flex align-items-center">
+        <i class="bi bi-box-seam me-2"></i>
+        Volume:
+        @if (!isEditing) {
+          <span class="ms-1">{{ room.volume }} m<sup>3</sup></span>
+        } @else {
+          <input type="number" class="form-control form-control-sm ms-2"
+                 [(ngModel)]="room.volume">
+        }
+      </li>
+
+      <!-- Portes -->
+      <li class="mb-2 d-flex align-items-center">
+        <i class="bi bi-door-open me-2"></i>
+        Portes:
+        @if (!isEditing) {
+          <span class="ms-1">{{ room.nbDoors }}</span>
+        } @else {
+          <input type="number" class="form-control form-control-sm ms-2"
+                 [(ngModel)]="room.nbDoors">
+        }
+      </li>
+
+      <!-- Surfaces vitrées -->
+      <li class="mb-2 d-flex align-items-center">
+        <i class="bi bi-grid-3x2 me-2"></i>
+        Surfaces vitrées:
+        @if (!isEditing) {
+          <span class="ms-1">{{ room.glazedSurface }} m<sup>2</sup></span>
+        } @else {
+          <input type="number" class="form-control form-control-sm ms-2"
+                 [(ngModel)]="room.glazedSurface">
+        }
+      </li>
+
+      <!-- Murs extérieurs -->
+      <li class="mb-2 d-flex align-items-center">
+        <i class="bi bi-house me-2"></i>
+        Murs extérieurs:
+        @if (!isEditing) {
+          <span class="ms-1">{{ room.nbExteriorWalls }}</span>
+        } @else {
+          <input type="number" class="form-control form-control-sm ms-2"
+                 [(ngModel)]="room.nbExteriorWalls">
+        }
+      </li>
+
+    </ul>
+
+    <!-- Slider Min -->
+    <div class="mb-3">
+      <label class="form-label">
+        Min Comfort Temp: {{ room.minTempComfort }} °C
+      </label>
+
+      <input type="range"
+             class="form-range"
+             min="16"
+             max="26"
+             step="1"
+             [value]="room.minTempComfort"
+             (input)="onMinTempChange($event)">
+    </div>
+
+    <!-- Slider Max -->
+    <div class="mb-3">
+      <label class="form-label">
+        Max Comfort Temp: {{ room.maxTempComfort }} °C
+      </label>
+
+      <input type="range"
+             class="form-range"
+             min="16"
+             max="26"
+             step="1"
+             [value]="room.maxTempComfort"
+             (input)="onMaxTempChange($event)">
+    </div>
+
+    <hr class="my-3">
+    <h5 class="mb-2">Capteurs</h5>
+    <!-- Ajouter capteur -->
+    <div class="input-group mb-3">
+      <input class="form-control"
+             placeholder="Type de capteur (Température, CO2...)"
+             [(ngModel)]="newSensorType">
+
+      <button class="btn btn-outline-success" (click)="onAddSensor()">
+        <i class="bi bi-plus"></i>
+      </button>
+    </div>
+
+    <!-- Liste capteurs -->
+    <ul class="list-unstyled">
+      @for (sensor of sensors; track sensor.id) {
+        <li class="d-flex justify-content-between align-items-center mb-2">
+
+          <div class="d-flex align-items-center gap-2">
+
+            <i class="bi bi-cpu"></i>
+
+            @if (editingSensorId !== sensor.id) {
+              <span>{{ sensor.type.name }}</span>
+            } @else {
+              <input class="form-control form-control-sm"
+                     [(ngModel)]="sensor.type.name">
+            }
+          </div>
+
+          <div class="d-flex gap-2">
+            <!-- Modifier -->
+            <button class="btn btn-sm btn-outline-primary"
+                    (click)="toggleEditSensor(sensor.id)">
+              @if (editingSensorId !== sensor.id) {
+                <i class="bi bi-pencil"></i>
+              } @else {
+                <i class="bi bi-save"></i>
+              }
+            </button>
+
+            <!-- Supprimer -->
+            <button class="btn btn-sm btn-outline-danger"
+                    (click)="onDeleteSensor(sensor.id)">
+              <i class="bi bi-trash"></i>
+            </button>
+          </div>
+        </li>
+      }
+
+      @if (sensors.length === 0) {
+        <p class="text-muted">Aucun capteur</p>
+      }
+    </ul>
   </div>
 
+
   <!-- Côté droit : scrollable -->
-  <div class="col-12 col-md-9 d-flex flex-column p-4"
-       style="height: calc(100vh - 100px); overflow-y: auto;">
+  <div class="col-12 col-md-9 d-flex flex-column p-4">
     <div class="mb-3">
       <h1>@if (room) { Salle: {{room.name}}} </h1>
     </div>
@@ -70,7 +186,7 @@
           }
         </div>
       } @else {
-        <p>Loading sensors...</p>
+        <p>Aucune donnée</p>
       }
     }
   </div>

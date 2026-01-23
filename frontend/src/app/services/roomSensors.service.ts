@@ -1,22 +1,69 @@
-import {Observable, of} from 'rxjs';
-import {Injectable} from '@angular/core';
-import {Room} from '../models/room';
 import {Sensor} from '../models/sensor';
-import {SensorStatus} from '../models/sensorStatus';
+import {Injectable} from '@angular/core';
 import {SensorType} from '../models/sensorType';
+import {Room} from '../models/room';
+import {Observable, of} from 'rxjs';
+import {SensorStatus} from '../models/sensorStatus';
 
 @Injectable({
   providedIn: 'root'
 })
 export class RoomSensorsService {
 
-  constructor() { }
+  private sensorTypes: SensorType[] = [
+    new SensorType(1, 'Temperature'),
+    new SensorType(2, 'CO2')
+  ];
+
+  private sensors: Sensor[] = [];
+
+  getSensorTypes(): SensorType[] {
+    return this.sensorTypes;
+  }
 
   getSensorsByRoom(room: Room): Observable<Sensor[]> {
-    const sensors: Sensor[] = [
-      new Sensor(1, new SensorStatus(1, 'Active', new Date()), new SensorType(1, 'Temperature'), room),
-      new Sensor(2, new SensorStatus(1, 'Active', new Date()), new SensorType(2, 'CO2'), room),
-    ];
-    return of(sensors);
+    return of(
+      this.sensors.filter(s => s.room.id === room.id && s.isExists)
+    );
+  }
+
+  addSensor(uuid: string, typeName: string, room: Room) {
+    let type = this.sensorTypes.find(
+      t => t.name.toLowerCase() === typeName.toLowerCase()
+    );
+
+    // ➕ créer type si inexistant
+    if (!type) {
+      type = new SensorType(this.sensorTypes.length + 1, typeName);
+      this.sensorTypes.push(type);
+    }
+
+    const status = new SensorStatus(1, 'Active', new Date());
+
+    const sensor = new Sensor(
+      uuid,
+      true,
+      status,
+      type,
+      room
+    );
+
+    this.sensors.push(sensor);
+  }
+
+  deleteSensor(id: string) {
+    const sensor = this.sensors.find(s => s.id === id);
+    if (sensor) sensor.isExists = false;
+  }
+
+  toggleSensorStatus(id: string) {
+    const sensor = this.sensors.find(s => s.id === id);
+    if (!sensor) return;
+
+    sensor.status.label = sensor.status.label === 'Active'
+      ? 'Inactive'
+      : 'Active';
+
+    sensor.status.timestamp = new Date();
   }
 }
