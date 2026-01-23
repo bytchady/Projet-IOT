@@ -23,16 +23,13 @@ export class RoomSensorsService {
 
   getSensorsByRoom(room: Room): Observable<Sensor[]> {
     return of(
-      this.sensors.filter(s => s.room.id === room.id && s.isExists)
+      this.sensors.filter(s => s.room.idRoom === room.idRoom && s.isExists)
     );
   }
 
   addSensor(uuid: string, typeName: string, room: Room) {
-    let type = this.sensorTypes.find(
-      t => t.name.toLowerCase() === typeName.toLowerCase()
-    );
+    let type = this.sensorTypes.find(t => t.name.toLowerCase() === typeName.toLowerCase());
 
-    // ➕ créer type si inexistant
     if (!type) {
       type = new SensorType(this.sensorTypes.length + 1, typeName);
       this.sensorTypes.push(type);
@@ -49,7 +46,11 @@ export class RoomSensorsService {
     );
 
     this.sensors.push(sensor);
+
+    // 🔄 Retourner l'Observable actualisé
+    return of(this.sensors.filter(s => s.room.idRoom === room.idRoom && s.isExists));
   }
+
 
   deleteSensor(id: string) {
     const sensor = this.sensors.find(s => s.id === id);

@@ -49,15 +49,13 @@ export class HomeComponent implements OnInit {
   onAddRoom() {
     const result = this.roomsService.createRoom(this.newRoomName);
     this.serverMessageService.showMessage(result.message, !result.success);
-
     if (result.success && result.room) {
       this.allRooms = this.roomsService.getRooms();
       this.rooms = [...this.allRooms];
-      const index = this.rooms.findIndex(r => r.id === result.room!.id);
+      const index = this.rooms.findIndex(r => r.idRoom === result.room!.idRoom);
       this.currentPage = Math.floor(index / this.pageSize) + 1;
       this.updatePagedRooms();
     }
-
     this.newRoomName = '';
   }
 
@@ -71,7 +69,7 @@ export class HomeComponent implements OnInit {
     }
 
     const filteredRooms = this.allRooms.filter(room =>
-      room.name.toLowerCase().includes(query.toLowerCase())
+      room.nameRoom.toLowerCase().includes(query.toLowerCase())
     );
 
     if (filteredRooms.length === 0) {

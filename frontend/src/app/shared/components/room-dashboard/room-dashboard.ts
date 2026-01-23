@@ -19,20 +19,20 @@ import { FormsModule } from '@angular/forms';
 export class RoomDashboard implements OnInit {
 
   room!: Room;
-  sensors: Sensor[] = [];
+  //sensors: Sensor[] = [];
 
   isEditing = false;
-  newSensorUUID = '';
-  newSensorType = '';
-  editingSensorId: string | null = null;
-
-  sensorTypes: string[] = []; // liste de types disponibles
+  // newSensorUUID = '';
+  // newSensorType = '';
+  // editingSensorId: string | null = null;
+  //
+  // sensorTypes: string[] = []; // liste de types disponibles
 
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private roomsService: RoomsService,
-    private roomSensorsService: RoomSensorsService
+    //private roomSensorsService: RoomSensorsService
   ) {}
 
   ngOnInit(): void {
@@ -44,17 +44,17 @@ export class RoomDashboard implements OnInit {
 
     this.room = r;
 
-    this.sensorTypes = this.roomSensorsService.getSensorTypes().map(t => t.name);
+    //this.sensorTypes = this.roomSensorsService.getSensorTypes().map(t => t.name);
 
-    this.loadSensors();
+    //this.loadSensors();
   }
 
-  // 🔄 Charger les capteurs
-  loadSensors() {
-    this.roomSensorsService.getSensorsByRoom(this.room).subscribe(sensors => {
-      this.sensors = sensors || [];
-    });
-  }
+  // // 🔄 Charger les capteurs
+  // loadSensors() {
+  //   this.roomSensorsService.getSensorsByRoom(this.room).subscribe(sensors => {
+  //     this.sensors = sensors || [];
+  //   });
+  // }
 
   // ✏️ Edition salle
   toggleEdit() {
@@ -71,66 +71,79 @@ export class RoomDashboard implements OnInit {
 
   // 🗑️ Supprimer salle (soft delete)
   onDeleteRoom() {
-    const confirmDelete = confirm(`Êtes-vous sûr de vouloir supprimer la salle ${this.room.name} ?`);
+    const confirmDelete = confirm(`Êtes-vous sûr de vouloir supprimer la salle ${this.room.nameRoom} ?`);
     if (!confirmDelete) return;
 
-    this.roomsService.deleteRoom(this.room.id);
+    this.roomsService.deleteRoom(this.room.idRoom);
     this.router.navigate(['/']);
   }
 
   onMinTempChange(event: Event) {
     const input = event.target as HTMLInputElement;
     let value = Number(input.value);
-
-    if (value > this.room.maxTempComfort) {
-      value = this.room.maxTempComfort;
+    if (value > this.room.maxTemp) {
+      value = this.room.maxTemp;
     }
-
-    this.room.minTempComfort = value;
+    this.room.minTemp = value;
     input.value = value.toString();
   }
 
   onMaxTempChange(event: Event) {
     const input = event.target as HTMLInputElement;
     let value = Number(input.value);
-
-    if (value < this.room.minTempComfort) {
-      value = this.room.minTempComfort;
+    if (value < this.room.minTemp) {
+      value = this.room.minTemp;
     }
-
-    this.room.maxTempComfort = value;
+    this.room.maxTemp = value;
     input.value = value.toString();
   }
 
-  onAddSensor() {
-    if (!this.newSensorUUID.trim() || !this.newSensorType.trim()) return;
-
-    this.roomSensorsService.addSensor(this.newSensorUUID, this.newSensorType, this.room);
-
-    this.newSensorUUID = '';
-    this.newSensorType = '';
-    this.loadSensors();
+  onMinHumChange(event: Event) {
+    const input = event.target as HTMLInputElement;
+    let value = Number(input.value);
+    if (value > this.room.maxHum) {
+      value = this.room.maxHum;
+    }
+    this.room.minHum = value;
+    input.value = value.toString();
   }
 
-  // ✏️ Modifier capteur
-  toggleEditSensor(id: string) {
-    this.editingSensorId = this.editingSensorId === id ? null : id;
+  onMaxHumChange(event: Event) {
+    const input = event.target as HTMLInputElement;
+    let value = Number(input.value);
+    if (value < this.room.minHum) {
+      value = this.room.minHum;
+    }
+    this.room.maxHum = value;
+    input.value = value.toString();
   }
 
-  // 🗑️ Supprimer capteur
-  onDeleteSensor(id: string) {
-    const confirmDelete = confirm('Supprimer ce capteur ?');
-    if (!confirmDelete) return;
+  // onAddSensor() {
+  //   if (!this.newSensorUUID.trim() || !this.newSensorType.trim()) return;
+  //
+  //   this.roomSensorsService.addSensor(this.newSensorUUID, this.newSensorType, this.room)
+  //     .subscribe(() => {
+  //       this.newSensorUUID = '';
+  //       this.newSensorType = '';
+  //       this.loadSensors(); // recharge le tableau actualisé
+  //     });
+  // }
 
-    this.roomSensorsService.deleteSensor(id);
-    this.loadSensors();
-  }
 
-  // 🔄 Activer / désactiver capteur
-  toggleSensorStatus(id: string) {
-    this.roomSensorsService.toggleSensorStatus(id);
-    this.loadSensors();
-  }
+  // // 🗑️ Supprimer capteur
+  // onDeleteSensor(id: string) {
+  //   const confirmDelete = confirm('Supprimer ce capteur ?');
+  //   if (!confirmDelete) return;
+  //
+  //   this.roomSensorsService.deleteSensor(id);
+  //   this.loadSensors();
+  // }
+
+  // // 🔄 Activer / désactiver capteur
+  // toggleSensorStatus(id: string) {
+  //   this.roomSensorsService.toggleSensorStatus(id);
+  //   this.loadSensors();
+  // }
 
   // 🎨 Couleur graphique par type
   getSensorColor(sensorType: string): string {
@@ -140,5 +153,4 @@ export class RoomDashboard implements OnInit {
       default: return 'rgba(0,0,0,1)';
     }
   }
-
 }

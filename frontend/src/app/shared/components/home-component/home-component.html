@@ -36,7 +36,7 @@
 
     <div class="flex-grow-1 overflow-auto overflow-x-hidden">
       <div class="row g-4">
-        @for (room of pagedRooms; track room.id) {
+        @for (room of pagedRooms; track room.idRoom) {
           <div class="col-12 col-sm-6 col-md-4">
             <app-room-card [room]="room"></app-room-card>
           </div>

@@ -14,8 +14,8 @@ export class RoomCard implements OnInit {
   @Input() room! : Room;
 
   ngOnInit() {
-    if (!this.room.name) {
-      this.room.name= "Aucune salle";
+    if (!this.room.nameRoom) {
+      this.room.nameRoom= "Aucune salle";
     }
   }
 }
