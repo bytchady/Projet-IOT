@@ -177,7 +177,6 @@
         <div class="d-flex flex-column gap-4">
           <div class="w-100">
             <app-sensor-graph
-              #tempGraph
               [room]="room"
               valueKey="valueTemp"
               color="rgba(255,99,132,1)"
@@ -186,7 +185,6 @@
           </div>
           <div class="w-100">
             <app-sensor-graph
-              #co2Graph
               [room]="room"
               valueKey="valueCO2"
               color="rgba(54,162,235,1)"
@@ -195,7 +193,6 @@
           </div>
           <div class="w-100">
             <app-sensor-graph
-              #humGraph
               [room]="room"
               valueKey="valueHum"
               color="rgba(75,192,92,1)"
