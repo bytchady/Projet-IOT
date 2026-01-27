@@ -7,6 +7,7 @@ export class Data {
     public valueCO2: number,
     public valueTemp: number,
     public valueHum: number,
+    public climStatus: Boolean,
     public room: Room
   ) {}
 }

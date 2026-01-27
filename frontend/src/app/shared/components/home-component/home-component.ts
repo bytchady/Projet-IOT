@@ -5,10 +5,11 @@ import {FormsModule} from '@angular/forms';
 import {Room} from '../../../models/room';
 import {RoomsService} from '../../../services/rooms.service';
 import {ServerMessageService} from '../../../services/serverMessages.service';
+import {RouterLink} from '@angular/router';
 
 @Component({
   selector: 'app-home-component',
-  imports: [SearchBar, RoomCard, FormsModule],
+  imports: [SearchBar, RoomCard, FormsModule, RouterLink],
   templateUrl: './home-component.html',
   styleUrls: ['./home-component.scss'],
 })

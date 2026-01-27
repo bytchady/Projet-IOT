@@ -8,24 +8,39 @@
       style="max-height:380px; object-fit:cover;"
     />
 
-    <div class="w-100" style="max-width:400px;">
-      <h4 class="mb-3 text-center">Créer une nouvelle salle</h4>
+    <div class="w-100 d-flex flex-column" style="width:600px;">
+      <h4 class="mb-3">Créer une nouvelle salle</h4>
 
-      <input
-        type="text"
-        class="form-control mb-3"
-        placeholder="Nom de la salle"
-        [(ngModel)]="newRoomName"
-      />
+      <div class="row g-2 flex-grow-1 align-items-start">
+        <div class="col-md-8 d-flex flex-column justify-content-start">
+          <input
+            type="text"
+            class="form-control mb-3"
+            placeholder="Nom de la salle"
+            [(ngModel)]="newRoomName"
+          />
 
-      <button
-        class="btn w-100 btn-outline-secondary"
-        (click)="onAddRoom()"
-        [disabled]="!newRoomName.trim()">
-        ➕ Ajouter la salle
-      </button>
+          <button
+            class="btn w-100 btn-outline-secondary mt-auto"
+            (click)="onAddRoom()"
+            [disabled]="!newRoomName.trim()">
+            ➕ Ajouter la salle
+          </button>
+        </div>
+
+        <div class="col-md-4 d-flex align-items-start ">
+          <button class="btn btn-primary w-100 mt-0" [routerLink]="['/report']">
+            📊 Rapport
+          </button>
+        </div>
+      </div>
     </div>
   </div>
+
+
+
+
+
 
   <!-- Partie droite -->
   <div class="col-md-6 d-flex flex-column">

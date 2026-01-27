@@ -1,17 +1,30 @@
+export interface DaySchedule {
+  start: string; // ex: "08:00"
+  end: string;   // ex: "18:00"
+}
 export class Room {
   idRoom: string;
+
   constructor(
-    // public idRoom: string,
+    public ipArduino: string,
     public nameRoom: string,
     public volumeRoom: number,
     public glazedSurface: number,
     public nbDoors: number,
     public nbExteriorWalls: number,
-    public co2Threshold: number,
     public minTemp: number,
     public maxTemp: number,
-    public minHum: number,
-    public maxHum: number,
+
+    public schedule: {
+      monday: DaySchedule;
+      tuesday: DaySchedule;
+      wednesday: DaySchedule;
+      thursday: DaySchedule;
+      friday: DaySchedule;
+      saturday: DaySchedule;
+      sunday: DaySchedule;
+    },
+
     public isExists: boolean
   ) {
     this.idRoom = crypto.randomUUID().substring(0, 8);
