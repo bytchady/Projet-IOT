@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import {AfterViewInit, Component, signal} from '@angular/core';
 import {RouterOutlet} from '@angular/router';
 
 @Component({
@@ -9,5 +9,9 @@ import {RouterOutlet} from '@angular/router';
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })
-export class App {
+export class App implements AfterViewInit {
+  ngAfterViewInit() {
+    setTimeout(() => window.dispatchEvent(new Event('resize')));
+  }
 }
+

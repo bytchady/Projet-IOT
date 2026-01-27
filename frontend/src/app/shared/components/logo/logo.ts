@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import {ChangeDetectorRef, Component, OnInit} from '@angular/core';
 import {RouterLink} from '@angular/router';
 
 @Component({
@@ -11,8 +11,10 @@ import {RouterLink} from '@angular/router';
 })
 export class Logo implements OnInit {
   name1!: string;
+  constructor(private cd: ChangeDetectorRef) {}
 
   ngOnInit() {
     this.name1 = "ThermoCESI";
+    this.cd.detectChanges();
   }
 }

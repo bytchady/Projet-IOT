@@ -5,10 +5,11 @@ import {FormsModule} from '@angular/forms';
 import {Room} from '../../../models/room';
 import {RoomsService} from '../../../services/rooms.service';
 import {ServerMessageService} from '../../../services/serverMessages.service';
+import {RouterLink} from '@angular/router';
 
 @Component({
   selector: 'app-home-component',
-  imports: [SearchBar, RoomCard, FormsModule],
+  imports: [SearchBar, RoomCard, FormsModule, RouterLink],
   templateUrl: './home-component.html',
   styleUrls: ['./home-component.scss'],
 })
@@ -49,15 +50,13 @@ export class HomeComponent implements OnInit {
   onAddRoom() {
     const result = this.roomsService.createRoom(this.newRoomName);
     this.serverMessageService.showMessage(result.message, !result.success);
-
     if (result.success && result.room) {
       this.allRooms = this.roomsService.getRooms();
       this.rooms = [...this.allRooms];
-      const index = this.rooms.findIndex(r => r.id === result.room!.id);
+      const index = this.rooms.findIndex(r => r.idRoom === result.room!.idRoom);
       this.currentPage = Math.floor(index / this.pageSize) + 1;
       this.updatePagedRooms();
     }
-
     this.newRoomName = '';
   }
 
@@ -71,7 +70,7 @@ export class HomeComponent implements OnInit {
     }
 
     const filteredRooms = this.allRooms.filter(room =>
-      room.name.toLowerCase().includes(query.toLowerCase())
+      room.nameRoom.toLowerCase().includes(query.toLowerCase())
     );
 
     if (filteredRooms.length === 0) {
