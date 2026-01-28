@@ -3,7 +3,7 @@ import {AsyncPipe} from "@angular/common";
 import {Logo} from "../logo/logo";
 import {ModeComponent} from "../mode-component/mode-component";
 import {ServerMessage} from "../server-message/server-message";
-import {ServerMessageService} from '../../../services/serverMessages.service';
+import {ServerMessagesServices} from '../../../services/server-messages/server-messages.services';
 
 @Component({
   selector: 'app-header',
@@ -17,5 +17,5 @@ import {ServerMessageService} from '../../../services/serverMessages.service';
   styleUrl: './header.scss',
 })
 export class Header {
-  constructor(public serverMessageService: ServerMessageService) {}
+  constructor(public serverMessageService: ServerMessagesServices) {}
 }

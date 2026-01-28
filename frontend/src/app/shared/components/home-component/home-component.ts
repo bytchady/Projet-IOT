@@ -3,8 +3,8 @@ import {SearchBar} from '../search-bar/search-bar';
 import {RoomCard} from '../room-card/room-card';
 import {FormsModule} from '@angular/forms';
 import {Room} from '../../../models/room';
-import {RoomsService} from '../../../services/rooms.service';
-import {ServerMessageService} from '../../../services/serverMessages.service';
+import {RoomsServices} from '../../../services/rooms/rooms.service';
+import {ServerMessagesServices} from '../../../services/server-messages/server-messages.services';
 import {RouterLink} from '@angular/router';
 
 @Component({
@@ -29,8 +29,8 @@ export class HomeComponent implements OnInit {
   @ViewChild(SearchBar) searchBar!: SearchBar;
 
   constructor(
-    private roomsService: RoomsService,
-    private serverMessageService: ServerMessageService
+    private roomsService: RoomsServices,
+    private serverMessageService: ServerMessagesServices
   ) {}
 
   ngOnInit() {

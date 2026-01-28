@@ -5,7 +5,7 @@ import { ArduinoPublishRequest } from '../models/types.js';
 export async function arduinoRoutes(fastify: FastifyInstance): Promise<void> {
   const arduinoController = new ArduinoController();
 
-  // PUT /arduino/publish - Arduino sends measurement data
+  // PUT /arduino/publish - Arduino sends measurement dataset
   fastify.put<{ Body: ArduinoPublishRequest }>(
     '/publish',
     {

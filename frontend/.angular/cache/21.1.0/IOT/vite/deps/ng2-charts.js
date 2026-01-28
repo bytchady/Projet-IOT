@@ -1,9 +1,4 @@
 import {
-  Chart,
-  defaults,
-  registerables
-} from "./chunk-YMGU4D5E.js";
-import {
   Directive,
   ElementRef,
   EventEmitter,
@@ -24,6 +19,11 @@ import {
   BehaviorSubject,
   distinctUntilChanged
 } from "./chunk-RSS3ODKE.js";
+import {
+  Chart,
+  defaults,
+  registerables
+} from "./chunk-YMGU4D5E.js";
 import "./chunk-GOMI4DH3.js";
 
 // node_modules/lodash-es/_freeGlobal.js

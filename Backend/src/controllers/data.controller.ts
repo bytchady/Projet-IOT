@@ -60,7 +60,7 @@ export class DataController {
       const data = await this.dataService.getLatestData(id);
 
       if (!data) {
-        throw new NotFoundError('No data found for this room');
+        throw new NotFoundError('No dataset found for this room');
       }
 
       return reply.send(data);

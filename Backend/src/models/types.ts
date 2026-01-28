@@ -57,7 +57,7 @@ export interface UpdateRoomRequest extends Partial<CreateRoomRequest> {
   id_room: string;
 }
 
-// Measurement data types
+// Measurement dataset types
 export interface MeasurementData {
   id_data: number;
   timestamp: Date;
