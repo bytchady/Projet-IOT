@@ -1,10 +1,10 @@
 import {AfterViewInit, Component, ElementRef, OnInit, QueryList, ViewChild, ViewChildren} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
 import {Room} from '../../../models/room';
-import {RoomsService} from '../../../services/rooms.service';
+import {RoomsServices} from '../../../services/rooms/rooms.service';
 import {SensorGraph} from '../sensor-graph/sensor-graph';
 import {FormsModule} from '@angular/forms';
-import {ServerMessageService} from '../../../services/serverMessages.service';
+import {ServerMessagesServices} from '../../../services/server-messages/server-messages.services';
 declare var tempusDominus: any;
 
 @Component({
@@ -41,8 +41,8 @@ export class RoomDashboard implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private roomsService: RoomsService,
-    private serverMessageService: ServerMessageService
+    private roomsService: RoomsServices,
+    private serverMessageService: ServerMessagesServices
   ) {}
 
   ngOnInit(): void {

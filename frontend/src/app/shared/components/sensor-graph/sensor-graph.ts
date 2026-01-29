@@ -1,6 +1,6 @@
 import { Component, Input, OnChanges } from '@angular/core';
 import { Data } from '../../../models/data';
-import { DataService } from '../../../services/data.services';
+import { DataServices } from '../../../services/data/data.services';
 import { Room } from '../../../models/room';
 import { BaseChartDirective } from 'ng2-charts';
 import { ChartData, ChartOptions, ChartType } from 'chart.js';
@@ -27,7 +27,7 @@ export class SensorGraph implements OnChanges {
   chartType: ChartType = 'line';
   labels: string[] = [];
 
-  constructor(private dataService: DataService) {}
+  constructor(private dataService: DataServices) {}
 
   ngOnChanges(): void {
     if (!this.room || !this.valueKey) return;

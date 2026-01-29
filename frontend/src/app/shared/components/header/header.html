@@ -1,13 +1,25 @@
-<div class="d-flex align-items-center justify-content-between m-2">
-  <app-logo></app-logo>
+<div class="header-container d-flex flex-wrap align-items-center justify-content-between gap-2 p-2">
 
+  <!-- Logo -->
+  <div class="header-left">
+    <app-logo></app-logo>
+  </div>
+
+  <!-- Message serveur (centré et flexible) -->
   @let message = serverMessageService.message$ | async;
   @if (message) {
-    <app-server-message
-      [message]="message"
-      [isError]="serverMessageService.isError$ | async">
-    </app-server-message>
+    <div class="header-center flex-grow-1 d-flex justify-content-center">
+      <app-server-message
+        [message]="message"
+        [isError]="serverMessageService.isError$ | async">
+      </app-server-message>
+    </div>
   }
 
-  <app-mode-component></app-mode-component>
+  <!-- Actions -->
+  <div class="header-right d-flex align-items-center gap-2">
+    <app-mode-component></app-mode-component>
+    <app-logout-button></app-logout-button>
+  </div>
+
 </div>
