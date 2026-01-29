@@ -1,6 +1,7 @@
 services:
   backend:
     build: ./backend
+    container_name: backend
     ports:
       - "3000:3000"
     environment:
@@ -29,13 +30,13 @@ services:
       timeout: 5s
       retries: 5
 
-  frontend:
-    build: ./frontend
-    container_name: frontend
-    ports:
-      - "4200:80"
-    depends_on:
-      - backend
+#  frontend:
+#    build: ./frontend
+#    container_name: frontend
+#    ports:
+#      - "4200:80"
+#    depends_on:
+#      - backend
 
 volumes:
   postgres_data:

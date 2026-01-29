@@ -1,7 +1,6 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { AuthService } from '../services/auth.service.js';
 import { LoginRequest } from '../models/types.js';
-import { UnauthorizedError } from '../utils/errors.js';
 
 export class AuthController {
   private authService: AuthService;
@@ -19,29 +18,44 @@ export class AuthController {
       const user = await this.authService.validateUser(username, password);
 
       if (!user) {
-        throw new UnauthorizedError('Invalid username or password');
+        // Retour JSON uniforme pour login invalide
+        return reply
+          .code(401)
+          .type('application/json')
+          .send({
+            message: 'Nom d’utilisateur ou mot de passe invalide',
+            error: true
+          });
       }
 
-      const token = this.fastify.jwt.sign({
-        id: user.id_user,
-        username: user.username,
-        role: user.role
-      }, { expiresIn: '24h' });
+      const token = this.fastify.jwt.sign(
+        { id: user.id_user, username: user.username, role: user.role },
+        { expiresIn: '24h' }
+      );
 
-      return reply.send({
-        token,
-        user: {
-          id: user.id_user,
-          username: user.username,
-          role: user.role
-        }
-      });
+      // Retour JSON uniforme pour succès
+      return reply
+        .type('application/json')
+        .send({
+          message: 'Connexion réussie, redirection en cours...',
+          error: false,
+          token,
+          user: {
+            id: user.id_user,
+            username: user.username,
+            role: user.role
+          }
+        });
+
     } catch (error) {
-      if (error instanceof UnauthorizedError) {
-        return reply.status(401).send({ error: error.message });
-      }
       request.log.error(error);
-      return reply.status(500).send({ error: 'Internal server error' });
+      return reply
+        .code(500)
+        .type('application/json')
+        .send({
+          message: 'Erreur serveur interne',
+          error: true
+        });
     }
   }
 }

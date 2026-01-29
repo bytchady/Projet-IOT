@@ -1,24 +1,40 @@
-<div class="container mt-5">
-  <div class="row justify-content-center">
-    <div class="col-md-4">
-      <div class="card p-4 shadow">
-        <h3 class="card-title text-center mb-3">Connexion</h3>
-        <form (ngSubmit)="onSubmit()" [formGroup]="loginForm">
-          <div class="mb-3">
-            <label for="username" class="form-label">Nom d'utilisateur</label>
-            <input type="text" id="username" class="form-control" formControlName="username" required>
-          </div>
-          <div class="mb-3">
-            <label for="password" class="form-label">Mot de passe</label>
-            <input type="password" id="password" class="form-control" formControlName="password" required>
-          </div>
-          <button type="submit" class="btn btn-primary w-100" [disabled]="loginForm.invalid">Se connecter</button>
-        </form>
-        @if(errorMessage) {
-          <div class="alert alert-danger mt-3">{{ errorMessage }}</div>
-        }
+<div class="min-vh-100 d-flex flex-column">
+  <app-header/>
 
+  <div class="container-fluid flex-grow-1">
+    <div class="container mt-5">
+      <div class="row justify-content-center">
+        <div class="col-md-4">
+          <div class="card p-4 shadow bg-body text-body">
+            <h3 class="card-title text-center mb-3">Connexion</h3>
+            <form (ngSubmit)="onSubmit()" [formGroup]="loginForm">
+              <div class="mb-3">
+                <label for="username" class="form-label">Nom d'utilisateur</label>
+                <input
+                  type="text"
+                  id="username"
+                  class="form-control bg-body text-body"
+                  formControlName="username" required>
+              </div>
+              <div class="mb-3">
+                <label for="password" class="form-label">Mot de passe</label>
+                <input
+                  type="password"
+                  id="password"
+                  class="form-control bg-body text-body"
+                  formControlName="password" required>
+              </div>
+              <button
+                type="submit"
+                class="btn btn-primary w-100" [disabled]="loginForm.invalid">
+                Se connecter
+              </button>
+            </form>
+          </div>
+        </div>
       </div>
     </div>
   </div>
+
+  <app-footer/>
 </div>

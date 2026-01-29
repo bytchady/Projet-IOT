@@ -4,13 +4,14 @@ import {Dashboard} from './shared/components/dashboard/dashboard';
 import {Report} from './shared/components/report/report';
 import {Login} from './shared/components/login/login';
 import {NgModule} from '@angular/core';
+import {publicGuard} from './guards/public/public-guard';
+import {authGuard} from './guards/auth/auth-guard';
 
 export const routes: Routes = [
-  {path: 'login', component: Login},
-  { path: '', redirectTo: 'login', pathMatch: 'full' },
-  {path: '', component: HomePage},
-  {path: 'rooms/:id', component: Dashboard},
-  {path: 'report', component: Report},
+  {path: '', component: HomePage, canActivate: [authGuard]},
+  {path: 'login', component: Login, canActivate: [publicGuard]},
+  {path: 'rooms/:id', component: Dashboard, canActivate: [authGuard]},
+  {path: 'report', component: Report, canActivate: [authGuard]},
   {path: '**', redirectTo: ''}
 ];
 

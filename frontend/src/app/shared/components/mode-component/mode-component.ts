@@ -11,7 +11,7 @@ export class ModeComponent implements OnInit {
 
   ngOnInit(): void {
     this.isDarkMode =
-      document.documentElement.getAttribute('dataset-bs-theme') === 'dark'
+      document.documentElement.getAttribute('data-bs-theme') === 'dark'
       || window.matchMedia('(prefers-color-scheme: dark)').matches;
 
     this.applyTheme();
@@ -24,7 +24,7 @@ export class ModeComponent implements OnInit {
 
   applyTheme() {
     document.documentElement.setAttribute(
-      'dataset-bs-theme',
+      'data-bs-theme',
       this.isDarkMode ? 'dark' : 'light'
     );
   }
