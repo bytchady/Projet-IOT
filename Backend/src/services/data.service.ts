@@ -4,7 +4,7 @@ import { MeasurementData } from '../models/types.js';
 export class DataService {
   async getDataByHour(roomId: string, hours: number): Promise<MeasurementData[]> {
     const result = await query<MeasurementData>(
-      `SELECT * FROM donnee_mesure
+      `SELECT * FROM data
        WHERE id_room = $1
        AND timestamp >= NOW() - INTERVAL '${hours} hours'
        ORDER BY timestamp DESC`,
@@ -15,7 +15,7 @@ export class DataService {
 
   async getAllData(roomId: string, limit: number = 100): Promise<MeasurementData[]> {
     const result = await query<MeasurementData>(
-      `SELECT * FROM donnee_mesure
+      `SELECT * FROM data
        WHERE id_room = $1
        ORDER BY timestamp DESC
        LIMIT $2`,
@@ -26,7 +26,7 @@ export class DataService {
 
   async getLatestData(roomId: string): Promise<MeasurementData | null> {
     const result = await query<MeasurementData>(
-      `SELECT * FROM donnee_mesure
+      `SELECT * FROM data
        WHERE id_room = $1
        ORDER BY timestamp DESC
        LIMIT 1`,
@@ -37,7 +37,7 @@ export class DataService {
 
   async getDataByDateRange(roomId: string, startDate: Date, endDate: Date): Promise<MeasurementData[]> {
     const result = await query<MeasurementData>(
-      `SELECT * FROM donnee_mesure
+      `SELECT * FROM data
        WHERE id_room = $1
        AND timestamp BETWEEN $2 AND $3
        ORDER BY timestamp DESC`,
@@ -52,7 +52,7 @@ export class DataService {
         AVG(value_temp) as avg_temp,
         AVG(value_hum) as avg_hum,
         AVG(value_co2) as avg_co2
-       FROM donnee_mesure
+       FROM data
        WHERE id_room = $1
        AND timestamp >= NOW() - INTERVAL '${hours} hours'`,
       [roomId]

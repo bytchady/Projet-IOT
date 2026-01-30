@@ -20,7 +20,7 @@ export async function hoursRoutes(fastify: FastifyInstance): Promise<void> {
   // GET /api/room/:id/hours - Get all schedules for a room
   fastify.get<{ Params: { id: string } }>(
     '/room/:id/hours',
-    { preHandler: [authMiddleware(fastify)] },
+    { preHandler: [authMiddleware()] },
     async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
       return hoursController.getSchedules(request, reply);
     }
@@ -30,7 +30,7 @@ export async function hoursRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.put<{ Params: { id: string }; Body: { schedules: unknown[] } }>(
     '/room/:id/hours',
     {
-      preHandler: [authMiddleware(fastify)],
+      preHandler: [authMiddleware()],
       schema: {
         body: {
           type: 'object',
@@ -53,7 +53,7 @@ export async function hoursRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.post<{ Params: { id: string }; Body: unknown }>(
     '/room/:id/hours',
     {
-      preHandler: [authMiddleware(fastify)],
+      preHandler: [authMiddleware()],
       schema: {
         body: scheduleSchema
       }
@@ -67,7 +67,7 @@ export async function hoursRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.patch<{ Params: { id: string; scheduleId: string }; Body: unknown }>(
     '/room/:id/hours/:scheduleId',
     {
-      preHandler: [authMiddleware(fastify)],
+      preHandler: [authMiddleware()],
       schema: {
         body: {
           type: 'object',
@@ -87,7 +87,7 @@ export async function hoursRoutes(fastify: FastifyInstance): Promise<void> {
   // DELETE /api/room/:id/hours/:scheduleId - Delete a single schedule
   fastify.delete<{ Params: { id: string; scheduleId: string } }>(
     '/room/:id/hours/:scheduleId',
-    { preHandler: [authMiddleware(fastify)] },
+    { preHandler: [authMiddleware()] },
     async (request: FastifyRequest<{ Params: { id: string; scheduleId: string } }>, reply: FastifyReply) => {
       return hoursController.deleteSchedule(request, reply);
     }

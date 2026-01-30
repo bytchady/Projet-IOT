@@ -1,127 +1,95 @@
 import { Injectable } from '@angular/core';
 import { Room } from '../../models/room';
+import {BehaviorSubject, Observable, of, tap} from 'rxjs';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { AuthServices } from '../auth/auth.services';
 
 @Injectable({
   providedIn: 'root'
 })
 export class RoomsServices {
+  private apiUrl = 'http://localhost:3000/api/rooms';
 
-  // Simule les salles déjà existantes dans la base
-  // TODO: Get les salles en backend
-  private rooms: Room[] = [
-    new Room(
-      '192.168.0.101',
-      'Room 101',
-      50,
-      20,
-      1,
-      2,
-      20,
-      25,
-      {
-        monday: { start: '08:00', end: '18:00' },
-        tuesday: { start: '08:00', end: '18:00' },
-        wednesday: { start: '08:00', end: '18:00' },
-        thursday: { start: '08:00', end: '18:00' },
-        friday: { start: '08:00', end: '18:00' },
-        saturday: { start: '10:00', end: '16:00' },
-        sunday: { start: '10:00', end: '16:00' }
-      },
-      true
-    ),
+  private roomsSubject = new BehaviorSubject<Room[]>([]);
+  rooms$ = this.roomsSubject.asObservable();
 
-    new Room(
-      '192.168.0.102',
-      'Room 102',
-      40,
-      15,
-      1,
-      1,
-      19,
-      24,
-      {
-        monday: { start: '07:30', end: '17:30' },
-        tuesday: { start: '07:30', end: '17:30' },
-        wednesday: { start: '07:30', end: '17:30' },
-        thursday: { start: '07:30', end: '17:30' },
-        friday: { start: '07:30', end: '17:30' },
-        saturday: { start: '09:00', end: '14:00' },
-        sunday: { start: '09:00', end: '14:00' }
-      },
-      true
-    ),
-
-    new Room(
-      '192.168.0.103',
-      'Room 103',
-      50,
-      20,
-      1,
-      2,
-      20,
-      25,
-      {
-        monday: { start: '09:00', end: '18:00' },
-        tuesday: { start: '09:00', end: '18:00' },
-        wednesday: { start: '08:00', end: '18:00' },
-        thursday: { start: '08:00', end: '18:00' },
-        friday: { start: '08:00', end: '18:00' },
-        saturday: { start: '10:00', end: '16:00' },
-        sunday: { start: '10:00', end: '16:00' }
-      },
-      true
-    )
-  ];
-
-  getRooms(): Room[] {
-    return this.rooms.filter(r => r.isExists);
+  constructor(
+    private http: HttpClient,
+    private authServices: AuthServices
+  ) {
+    // ⚡ Charger automatiquement les salles si l'utilisateur est connecté au démarrage
+    if (this.authServices.isLoggedIn()) {
+      this.loadRooms();
+    }
   }
 
-  // TODO: Création de salle en backend
-  createRoom(name: string): { success: boolean; message: string; room?: Room } {
-    const trimmedName = name.trim();
-    if (!trimmedName) return { success: false, message: 'Nom vide' };
+  loadRooms() {
+    const { headers } = this.getAuthHeaders();
+    this.http.get<{ message: string; error: boolean; data: Room[] }>(this.apiUrl, { headers })
+      .subscribe(res => {
+        if (!res.error) {
+          this.roomsSubject.next(res.data);
+        }
+      });
+  }
 
-    const exists = this.rooms.some(r => r.nameRoom === trimmedName);
-    if (exists) return { success: false, message: 'Salle déja existante' };
+  private getAuthHeaders() {
+    const token = this.authServices.getToken();
+    return {
+      headers: new HttpHeaders({
+        Authorization: `Bearer ${token || ''}`
+      })
+    };
+  }
 
-    const newRoom = new Room(
-      '0.0.0.0', // ipArduino par défaut
-      trimmedName, // nom de la room
-      0, // volumeRoom
-      0, // glazedSurface
-      0, // nbDoors
-      0, // nbExteriorWalls
-      0, // minTemp
-      0, // maxTemp
-      {
-        monday: { start: '00:00', end: '00:00' },
-        tuesday: { start: '00:00', end: '00:00' },
-        wednesday: { start: '00:00', end: '00:00' },
-        thursday: { start: '00:00', end: '00:00' },
-        friday: { start: '00:00', end: '00:00' },
-        saturday: { start: '00:00', end: '00:00' },
-        sunday: { start: '00:00', end: '00:00' }
-      },
-      true // isExists
+  createRoom(room: Partial<Room>) {
+    const payload = {
+      ...room,
+      isExists: true,
+      schedule: room.schedule || this.defaultSchedule()
+    };
+    return this.http.put<{ message: string; error: boolean; data: Room }>(this.apiUrl, payload, this.getAuthHeaders())
+      .pipe(
+        tap(res => {
+          if (!res.error && res.data) {
+            const current = this.roomsSubject.getValue();
+            this.roomsSubject.next([...current, res.data]);
+          }
+        })
+      );
+  }
+
+  private defaultSchedule() {
+    return {
+      monday: { start: '08:00', end: '18:00' },
+      tuesday: { start: '08:00', end: '18:00' },
+      wednesday: { start: '08:00', end: '18:00' },
+      thursday: { start: '08:00', end: '18:00' },
+      friday: { start: '08:00', end: '18:00' },
+      saturday: { start: '08:00', end: '18:00' },
+      sunday: { start: '08:00', end: '18:00' },
+    };
+  }
+
+  updateRoom(room: Partial<Room> & { idRoom: string }): Observable<{ message: string; error: boolean; data: Room }> {
+    return this.http.patch<{ message: string; error: boolean; data: Room }>(
+      this.apiUrl,
+      room,
+      this.getAuthHeaders()
     );
-
-    this.rooms.push(newRoom);
-    this.rooms.sort((a, b) => Number(a.nameRoom) - Number(b.nameRoom));
-
-    return { success: true, message: 'Salle créée avec succès', room: newRoom };
   }
 
-  // TODO: Suppression de salle en backend
-  deleteRoom(id: string): boolean {
-    const room = this.rooms.find(r => r.idRoom === id);
-    if (!room) return false;
-
-    room.isExists = false;
-    return true;
+  deleteRoom(id: string): Observable<{ message: string; error: boolean }> {
+    return this.http.request<{ message: string; error: boolean }>('delete', this.apiUrl, {
+      ...this.getAuthHeaders(),
+      body: { idRoom: id }
+    });
   }
 
-  getRoomById(id: string): Room | undefined {
-    return this.rooms.find(r => r.idRoom === id);
+  getRoomById(id: string): Observable<{ message: string; error: boolean; data: Room }> {
+    return this.http.get<{ message: string; error: boolean; data: Room }>(
+      `${this.apiUrl}/${id}`,
+      this.getAuthHeaders()
+    );
   }
 }

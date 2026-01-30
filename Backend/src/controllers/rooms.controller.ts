@@ -1,122 +1,93 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { RoomsService } from '../services/rooms.service.js';
 import { CreateRoomRequest, UpdateRoomRequest } from '../models/types.js';
-import { NotFoundError, BadRequestError } from '../utils/errors.js';
+import { AppError, NotFoundError, BadRequestError } from '../utils/errors.js';
 
 export class RoomsController {
-  private roomsService: RoomsService;
-
-  constructor() {
-    this.roomsService = new RoomsService();
-  }
+  private roomsService = new RoomsService();
 
   async getAllRooms(request: FastifyRequest, reply: FastifyReply) {
     try {
       const rooms = await this.roomsService.getAllRooms();
-      return reply.send(rooms);
-    } catch (error) {
-      request.log.error(error);
-      return reply.status(500).send({ error: 'Internal server error' });
+      return reply.send({ message: "Liste des salles récupérée avec succès", error: false, data: rooms });
+    } catch (err) {
+      return this.handleError(err, request, reply);
     }
   }
 
   async getRoomById(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
     try {
-      const { id } = request.params;
-      const room = await this.roomsService.getRoomById(id);
-
-      if (!room) {
-        throw new NotFoundError('Room not found');
-      }
-
-      return reply.send(room);
-    } catch (error) {
-      if (error instanceof NotFoundError) {
-        return reply.status(404).send({ error: error.message });
-      }
-      request.log.error(error);
-      return reply.status(500).send({ error: 'Internal server error' });
+      const room = await this.roomsService.getRoomById(request.params.id);
+      if (!room) throw new NotFoundError('Salle introuvable');
+      return reply.send({ message: "Salle récupérée avec succès", error: false, data: room });
+    } catch (err) {
+      return this.handleError(err, request, reply);
     }
   }
 
   async createRoom(request: FastifyRequest<{ Body: CreateRoomRequest }>, reply: FastifyReply) {
     try {
       const roomData = request.body;
+      if (!roomData.nameRoom) throw new BadRequestError('Le nom de la salle est requis');
 
-      if (!roomData.name_room) {
-        throw new BadRequestError('Room name is required');
+      // Vérifie si le nom existe déjà
+      const existingRooms = await this.roomsService.getAllRooms();
+      if (existingRooms.some(r => r.nameRoom.toLowerCase() === roomData.nameRoom.toLowerCase())) {
+        return reply.code(409).send({ message: "Salle déjà existante", error: true });
       }
 
-      const room = await this.roomsService.createRoom(roomData);
-      return reply.status(201).send(room);
-    } catch (error) {
-      if (error instanceof BadRequestError) {
-        return reply.status(400).send({ error: error.message });
-      }
-      request.log.error(error);
-      return reply.status(500).send({ error: 'Internal server error' });
+      const room = await this.roomsService.createRoom({
+        ...roomData,
+        schedule: roomData.schedule,
+        isExists: true,
+      });
+
+      return reply.code(201).send({ message: "Salle créée avec succès", error: false, data: room });
+    } catch (err) {
+      return this.handleError(err, request, reply);
     }
   }
 
   async updateRoom(request: FastifyRequest<{ Body: UpdateRoomRequest }>, reply: FastifyReply) {
     try {
       const roomData = request.body;
-
-      if (!roomData.id_room) {
-        throw new BadRequestError('Room ID is required');
-      }
+      if (!roomData.idRoom) throw new BadRequestError("L'identifiant de la salle est requis");
 
       const room = await this.roomsService.updateRoom(roomData);
+      if (!room) throw new NotFoundError('Salle introuvable');
 
-      if (!room) {
-        throw new NotFoundError('Room not found');
-      }
-
-      // Check if temp was updated and return sync status
-      const tempUpdated = roomData.min_temp !== undefined || roomData.max_temp !== undefined;
+      const tempUpdated = roomData.minTemp !== undefined || roomData.maxTemp !== undefined;
 
       return reply.send({
-        ...room,
-        arduino_sync: tempUpdated && room.ip_arduino
-          ? { success: true, message: 'Temperature config sent to Arduino' }
+        message: "Salle mise à jour avec succès",
+        error: false,
+        data: room,
+        arduino_sync: tempUpdated && room.ipArduino
+          ? { success: true, message: 'Configuration de température envoyée à l’Arduino' }
           : undefined
       });
-    } catch (error) {
-      if (error instanceof NotFoundError) {
-        return reply.status(404).send({ error: error.message });
-      }
-      if (error instanceof BadRequestError) {
-        return reply.status(400).send({ error: error.message });
-      }
-      request.log.error(error);
-      return reply.status(500).send({ error: 'Internal server error' });
+    } catch (err) {
+      return this.handleError(err, request, reply);
     }
   }
 
-  async deleteRoom(request: FastifyRequest<{ Body: { id_room: string } }>, reply: FastifyReply) {
+  async deleteRoom(request: FastifyRequest<{ Body: { idRoom: string } }>, reply: FastifyReply) {
     try {
-      const { id_room } = request.body;
+      const { idRoom } = request.body;
+      if (!idRoom) throw new BadRequestError("L'identifiant de la salle est requis");
 
-      if (!id_room) {
-        throw new BadRequestError('Room ID is required');
-      }
+      const deleted = await this.roomsService.deleteRoom(idRoom);
+      if (!deleted) throw new NotFoundError('Salle introuvable');
 
-      const deleted = await this.roomsService.deleteRoom(id_room);
-
-      if (!deleted) {
-        throw new NotFoundError('Room not found');
-      }
-
-      return reply.send({ message: 'Room deleted successfully' });
-    } catch (error) {
-      if (error instanceof NotFoundError) {
-        return reply.status(404).send({ error: error.message });
-      }
-      if (error instanceof BadRequestError) {
-        return reply.status(400).send({ error: error.message });
-      }
-      request.log.error(error);
-      return reply.status(500).send({ error: 'Internal server error' });
+      return reply.send({ message: "Salle supprimée avec succès", error: false });
+    } catch (err) {
+      return this.handleError(err, request, reply);
     }
+  }
+
+  private handleError(err: unknown, request: FastifyRequest, reply: FastifyReply) {
+    request.log.error(err);
+    if (err instanceof AppError) return reply.code(err.statusCode).send(err.toJSON());
+    return reply.code(500).send({ message: "Erreur serveur interne", error: true });
   }
 }

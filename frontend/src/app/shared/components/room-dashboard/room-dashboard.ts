@@ -1,11 +1,10 @@
-import {AfterViewInit, Component, ElementRef, OnInit, QueryList, ViewChild, ViewChildren} from '@angular/core';
+import {AfterViewInit, Component, ElementRef, OnInit, ViewChild} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
 import {Room} from '../../../models/room';
 import {RoomsServices} from '../../../services/rooms/rooms.service';
 import {SensorGraph} from '../sensor-graph/sensor-graph';
 import {FormsModule} from '@angular/forms';
 import {ServerMessagesServices} from '../../../services/server-messages/server-messages.services';
-declare var tempusDominus: any;
 
 @Component({
   selector: 'app-room-dashboard',
@@ -14,15 +13,16 @@ declare var tempusDominus: any;
     FormsModule,
   ],
   templateUrl: './room-dashboard.html',
-  styleUrl: './room-dashboard.scss',
+  styleUrls: ['./room-dashboard.scss'],
 })
 export class RoomDashboard implements OnInit {
   @ViewChild('tempGraph') tempGraph!: SensorGraph;
   @ViewChild('co2Graph') co2Graph!: SensorGraph;
   @ViewChild('humGraph') humGraph!: SensorGraph;
+
   room!: Room;
   isEditing = false;
-  today!: string ;
+  today!: string;
 
   weekDays: (keyof Room['schedule'])[] = [
     'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'
@@ -37,7 +37,6 @@ export class RoomDashboard implements OnInit {
     sunday: 'Dimanche'
   };
 
-
   constructor(
     private route: ActivatedRoute,
     private router: Router,
@@ -49,13 +48,25 @@ export class RoomDashboard implements OnInit {
     const id = this.route.snapshot.paramMap.get('id');
     if (!id) return;
 
-    const room = this.roomsService.getRoomById(id);
-    if (!room) return;
-    this.room = room;
+    // ✅ Appel backend pour récupérer la salle
+    this.roomsService.getRoomById(id).subscribe({
+      next: (res) => {
+        if (res.error) {
+          this.serverMessageService.showMessage(res.message, true);
+          this.router.navigate(['/']);
+          return;
+        }
+        this.room = res.data;
+      },
+      error: (err) => {
+        this.serverMessageService.showMessage('Erreur serveur', true);
+        this.router.navigate(['/']);
+      }
+    });
 
     const now = new Date();
     const day = String(now.getDate()).padStart(2, '0');
-    const month = String(now.getMonth() + 1).padStart(2, '0'); // Les mois vont de 0 à 11
+    const month = String(now.getMonth() + 1).padStart(2, '0');
     const year = now.getFullYear();
     this.today = `${day}/${month}/${year}`;
   }
@@ -99,65 +110,63 @@ export class RoomDashboard implements OnInit {
 
   toggleEdit() {
     if (this.isEditing) {
-      // ✅ Vérifie les erreurs côté frontend
-      if (this.hasTimeErrors()) {
-        this.serverMessageService.showMessage(
-          "Impossible d'enregistrer, vérifier tout les champs.",
-          true
-        );
-        return; // on sort sans enregistrer
-      }
-
-      // TODO: ici on pourra envoyer la modification au backend
+      // ✅ On envoie directement au backend, tout contrôle se fait côté serveur
       this.saveRoomChanges();
     }
-
     this.isEditing = !this.isEditing;
   }
 
-  hasTimeErrors(): boolean {
-    for (const day of this.weekDays) {
-      const { start, end } = this.room.schedule[day];
-      if (!this.isValidTime(start) || !this.isValidTime(end)) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-
   saveRoomChanges() {
-    console.log('Room updated:', this.room);
+    if (!this.room.idRoom) return;
 
-    // TODO: Simulation d'appel backend
-    // this.roomsService.updateRoom(this.room).subscribe(
-    //   res => { /* succès */ },
-    //   err => { this.serverMessageService.showMessage(err.message, true); }
-    // );
+    const payload = {
+      ...this.room,
+      id_room: this.room.idRoom
+    };
 
-    // Forcer le graph à se mettre à jour
-    this.tempGraph?.ngOnChanges();
-    this.co2Graph?.ngOnChanges();
-    this.humGraph?.ngOnChanges();
+    this.roomsService.updateRoom(payload).subscribe({
+      next: (res) => {
+        if (res.error) {
+          this.serverMessageService.showMessage(res.message, true);
+          return;
+        }
+        this.room = res.data;
+        this.serverMessageService.showMessage('Salle mise à jour avec succès', false);
+
+        // Mettre à jour les graphiques
+        this.tempGraph?.ngOnChanges();
+        this.co2Graph?.ngOnChanges();
+        this.humGraph?.ngOnChanges();
+      },
+      error: () => {
+        this.serverMessageService.showMessage('Erreur serveur', true);
+      }
+    });
   }
 
-
-
-  // 🗑️ Supprimer salle (soft delete)
   onDeleteRoom() {
     const confirmDelete = confirm(`Êtes-vous sûr de vouloir supprimer la salle "${this.room.nameRoom}" ?`);
     if (!confirmDelete) return;
 
-    this.roomsService.deleteRoom(this.room.idRoom);
-    this.router.navigate(['/']);
+    this.roomsService.deleteRoom(this.room.idRoom).subscribe({
+      next: (res) => {
+        if (res.error) {
+          this.serverMessageService.showMessage(res.message, true);
+          return;
+        }
+        this.serverMessageService.showMessage('Salle supprimée avec succès', false);
+        this.router.navigate(['/']);
+      },
+      error: () => {
+        this.serverMessageService.showMessage('Erreur serveur', true);
+      }
+    });
   }
 
   onMinTempChange(event: Event) {
     const input = event.target as HTMLInputElement;
     let value = Number(input.value);
-    if (value > this.room.maxTemp) {
-      value = this.room.maxTemp;
-    }
+    if (value > this.room.maxTemp) value = this.room.maxTemp;
     this.room.minTemp = value;
     input.value = value.toString();
   }
@@ -165,11 +174,8 @@ export class RoomDashboard implements OnInit {
   onMaxTempChange(event: Event) {
     const input = event.target as HTMLInputElement;
     let value = Number(input.value);
-    if (value < this.room.minTemp) {
-      value = this.room.minTemp;
-    }
+    if (value < this.room.minTemp) value = this.room.minTemp;
     this.room.maxTemp = value;
     input.value = value.toString();
   }
-
 }

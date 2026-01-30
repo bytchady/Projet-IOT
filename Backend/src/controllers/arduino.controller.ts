@@ -14,7 +14,7 @@ export class ArduinoController {
     try {
       const data = request.body;
 
-      if (!data.id_room) {
+      if (!data.idRoom) {
         throw new BadRequestError('Room ID is required');
       }
 

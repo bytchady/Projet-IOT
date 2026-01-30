@@ -1,13 +1,13 @@
 import { query } from '../config/database.js';
-import { ArduinoPublishRequest, MeasurementData, Room } from '../models/types.js';
+import { ArduinoPublishRequest, MeasurementData, Rooms } from '../models/types.js';
 import { NotFoundError } from '../utils/errors.js';
 
 export class ArduinoService {
   async saveMeasurement(data: ArduinoPublishRequest): Promise<MeasurementData> {
     // Verify room exists
-    const roomResult = await query<Room>(
+    const roomResult = await query<Rooms>(
       'SELECT * FROM salle WHERE id_room = $1 AND is_exists = TRUE',
-      [data.id_room]
+      [data.idRoom]
     );
 
     if (roomResult.rows.length === 0) {
@@ -16,15 +16,14 @@ export class ArduinoService {
 
     // Insert measurement
     const result = await query<MeasurementData>(
-      `INSERT INTO donnee_mesure (timestamp, value_co2, value_temp, value_hum, clim_status, id_room)
+      `INSERT INTO data (timestamp, value_co2, value_temp, value_hum, clim_status, id_room)
        VALUES (NOW(), $1, $2, $3, $4, $5)
        RETURNING *`,
       [
-        data.value_co2 ?? null,
-        data.value_temp ?? null,
-        data.value_hum ?? null,
-        data.clim_status ?? null,
-        data.id_room
+        data.valueCO2 ?? null,
+        data.valueTemp ?? null,
+        data.climStatus ?? null,
+        data.idRoom
       ]
     );
 
@@ -36,32 +35,18 @@ export class ArduinoService {
     return measurement;
   }
 
-  private async checkThresholds(room: Room, measurement: MeasurementData): Promise<void> {
+  private async checkThresholds(room: Rooms, measurement: MeasurementData): Promise<void> {
     const alerts: string[] = [];
-
-    // Check CO2 threshold
-    if (room.co2_threshold && measurement.value_co2 && measurement.value_co2 > room.co2_threshold) {
-      alerts.push(`CO2 level (${measurement.value_co2}) exceeds threshold (${room.co2_threshold})`);
-    }
-
     // Check temperature thresholds
-    if (room.min_temp && measurement.value_temp && measurement.value_temp < room.min_temp) {
-      alerts.push(`Temperature (${measurement.value_temp}) below minimum (${room.min_temp})`);
+    if (room.minTemp && measurement.valueTemp && measurement.valueTemp < room.minTemp) {
+      alerts.push(`Temperature (${measurement.valueTemp}) below minimum (${room.minTemp})`);
     }
-    if (room.max_temp && measurement.value_temp && measurement.value_temp > room.max_temp) {
-      alerts.push(`Temperature (${measurement.value_temp}) above maximum (${room.max_temp})`);
-    }
-
-    // Check humidity thresholds
-    if (room.min_hum && measurement.value_hum && measurement.value_hum < room.min_hum) {
-      alerts.push(`Humidity (${measurement.value_hum}) below minimum (${room.min_hum})`);
-    }
-    if (room.max_hum && measurement.value_hum && measurement.value_hum > room.max_hum) {
-      alerts.push(`Humidity (${measurement.value_hum}) above maximum (${room.max_hum})`);
+    if (room.maxTemp && measurement.valueTemp && measurement.valueTemp > room.maxTemp) {
+      alerts.push(`Temperature (${measurement.valueTemp}) above maximum (${room.maxTemp})`);
     }
 
     if (alerts.length > 0) {
-      console.log(`[ALERT] Room ${room.name_room} (${room.id_room}):`, alerts);
+      console.log(`[ALERT] Room ${room.nameRoom} (${room.idRoom}):`, alerts);
     }
   }
 

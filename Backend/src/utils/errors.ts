@@ -1,3 +1,8 @@
+export interface ErrorResponse {
+  message: string;
+  error: boolean;
+}
+
 export class AppError extends Error {
   statusCode: number;
 
@@ -5,6 +10,13 @@ export class AppError extends Error {
     super(message);
     this.statusCode = statusCode;
     this.name = 'AppError';
+  }
+
+  toJSON(): ErrorResponse {
+    return {
+      message: this.message,
+      error: true
+    };
   }
 }
 

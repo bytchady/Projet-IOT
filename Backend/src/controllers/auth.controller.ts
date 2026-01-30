@@ -1,6 +1,7 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { AuthService } from '../services/auth.service.js';
 import { LoginRequest } from '../models/types.js';
+import {BadRequestError} from '../utils/errors';
 
 export class AuthController {
   private authService: AuthService;
@@ -14,34 +15,23 @@ export class AuthController {
   async login(request: FastifyRequest<{ Body: LoginRequest }>, reply: FastifyReply) {
     try {
       const { username, password } = request.body;
-
       const user = await this.authService.validateUser(username, password);
 
-      if (!user) {
-        // Retour JSON uniforme pour login invalide
-        return reply
-          .code(401)
-          .type('application/json')
-          .send({
-            message: 'Nom d’utilisateur ou mot de passe invalide',
-            error: true
-          });
-      }
+      if (!user) throw new BadRequestError("Nom d’utilisateur ou mot de passe invalide");
 
       const token = this.fastify.jwt.sign(
-        { id: user.id_user, username: user.username, role: user.role },
+        { id: user.idUser, username: user.username, role: user.role },
         { expiresIn: '24h' }
       );
 
-      // Retour JSON uniforme pour succès
       return reply
         .type('application/json')
         .send({
-          message: 'Connexion réussie, redirection en cours...',
+          message: "Connexion réussie, redirection en cours...",
           error: false,
           token,
           user: {
-            id: user.id_user,
+            id: user.idUser,
             username: user.username,
             role: user.role
           }
@@ -53,7 +43,7 @@ export class AuthController {
         .code(500)
         .type('application/json')
         .send({
-          message: 'Erreur serveur interne',
+          message: "Erreur serveur interne",
           error: true
         });
     }

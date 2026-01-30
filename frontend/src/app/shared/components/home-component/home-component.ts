@@ -1,11 +1,12 @@
 import { Component, OnInit, HostListener, ViewChild } from '@angular/core';
-import {SearchBar} from '../search-bar/search-bar';
-import {RoomCard} from '../room-card/room-card';
-import {FormsModule} from '@angular/forms';
-import {Room} from '../../../models/room';
-import {RoomsServices} from '../../../services/rooms/rooms.service';
-import {ServerMessagesServices} from '../../../services/server-messages/server-messages.services';
-import {RouterLink} from '@angular/router';
+import { SearchBar } from '../search-bar/search-bar';
+import { RoomCard } from '../room-card/room-card';
+import { FormsModule } from '@angular/forms';
+import { Room } from '../../../models/room';
+import { RoomsServices } from '../../../services/rooms/rooms.service';
+import { ServerMessagesServices } from '../../../services/server-messages/server-messages.services';
+import { RouterLink } from '@angular/router';
+import {AuthServices} from '../../../services/auth/auth.services';
 
 @Component({
   selector: 'app-home-component',
@@ -29,16 +30,23 @@ export class HomeComponent implements OnInit {
   @ViewChild(SearchBar) searchBar!: SearchBar;
 
   constructor(
-    private roomsService: RoomsServices,
-    private serverMessageService: ServerMessagesServices
+    private roomsServices: RoomsServices,
+    private serverMessagesServices: ServerMessagesServices,
+    private authServices: AuthServices
   ) {}
 
   ngOnInit() {
-    this.allRooms = this.roomsService.getRooms();
-    this.rooms = [...this.allRooms];
-    this.updatePageSettings();
-    this.updatePagedRooms();
+    this.roomsServices.rooms$.subscribe(rooms => {
+      this.allRooms = rooms;
+      this.rooms = [...rooms];
+      this.updatePagedRooms();
+    });
+
+    if (this.authServices.isLoggedIn()) {
+      this.roomsServices.loadRooms();
+    }
   }
+
 
   @HostListener('window:resize', ['$event'])
   onResize(event: any) {
@@ -47,22 +55,49 @@ export class HomeComponent implements OnInit {
     this.updatePagedRooms();
   }
 
+  /** Création d'une nouvelle salle */
   onAddRoom() {
-    const result = this.roomsService.createRoom(this.newRoomName);
-    this.serverMessageService.showMessage(result.message, !result.success);
-    if (result.success && result.room) {
-      this.allRooms = this.roomsService.getRooms();
-      this.rooms = [...this.allRooms];
-      const index = this.rooms.findIndex(r => r.idRoom === result.room!.idRoom);
-      this.currentPage = Math.floor(index / this.pageSize) + 1;
-      this.updatePagedRooms();
-    }
+    const payload = {
+      nameRoom: this.newRoomName.trim(),
+      ipArduino: '0.0.0.0',
+      volumeRoom: 0,
+      glazedSurface: 0,
+      nbDoors: 0,
+      nbExteriorWalls: 0,
+      minTemp: 0,
+      maxTemp: 0,
+      schedule: {
+        monday: { start: '00:00', end: '00:00' },
+        tuesday: { start: '00:00', end: '00:00' },
+        wednesday: { start: '00:00', end: '00:00' },
+        thursday: { start: '00:00', end: '00:00' },
+        friday: { start: '00:00', end: '00:00' },
+        saturday: { start: '00:00', end: '00:00' },
+        sunday: { start: '00:00', end: '00:00' },
+      },
+      isExists: true
+    };
+
+    this.roomsServices.createRoom(payload).subscribe({
+      next: (res) => {
+        if (!res.error) {
+          this.roomsServices.loadRooms();
+          this.serverMessagesServices.showMessage(res.message, false);
+        } else {
+          this.serverMessagesServices.showMessage(res.message, true);
+        }
+      },
+      error: (err) => {
+        this.serverMessagesServices.showMessage(err.error?.message || 'Erreur serveur', true);
+      }
+    });
+
     this.newRoomName = '';
   }
 
+  /** Recherche de salle */
   onSearchRoom(query: string) {
     this.currentPage = 1;
-
     if (!query) {
       this.rooms = [...this.allRooms];
       this.updatePagedRooms();
@@ -74,20 +109,17 @@ export class HomeComponent implements OnInit {
     );
 
     if (filteredRooms.length === 0) {
-      this.serverMessageService.showMessage(
-        `Aucun résultat correspondant à "${query}"`,
-        true
-      );
+      this.serverMessagesServices.showMessage(`Aucun résultat correspondant à "${query}"`, true);
       this.searchBar.clear();
       return;
     }
 
     this.rooms = filteredRooms;
     this.updatePagedRooms();
-    this.serverMessageService.clearMessage();
+    this.serverMessagesServices.clearMessage();
   }
 
-
+  /** Pagination et affichage */
   updatePageSettings() {
     if (this.isMobile) {
       this.rowsPerPage = 1;
@@ -101,10 +133,8 @@ export class HomeComponent implements OnInit {
 
   updatePagedRooms() {
     if (this.currentPage > this.totalPages()) this.currentPage = 1;
-
     const start = (this.currentPage - 1) * this.pageSize;
     const end = start + this.pageSize;
-
     this.pagedRooms = this.rooms.slice(start, end);
   }
 
@@ -112,9 +142,7 @@ export class HomeComponent implements OnInit {
     const total = this.totalPages();
     let start = Math.max(this.currentPage - 2, 1);
     let end = Math.min(start + 3, total);
-
     if (end - start < 3) start = Math.max(end - 3, 1);
-
     const pages: number[] = [];
     for (let i = start; i <= end; i++) pages.push(i);
     return pages;

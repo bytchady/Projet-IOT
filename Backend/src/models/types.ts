@@ -1,8 +1,7 @@
-// User types
-export interface User {
-  id_user: number;
+export interface Users {
+  idUser: number;
   username: string;
-  password_hash: string;
+  passwordHash: string;
   email: string | null;
   role: 'admin' | 'user';
   created_at: Date;
@@ -22,91 +21,116 @@ export interface LoginResponse {
   };
 }
 
-// Room types
-export interface Room {
-  id_room: string;
-  name_room: string;
-  ip_arduino: string | null;
-  volume_room: number | null;
-  glazed_surface: number | null;
-  nb_doors: number | null;
-  nb_exterior_walls: number | null;
-  co2_threshold: number | null;
-  min_temp: number | null;
-  max_temp: number | null;
-  min_hum: number | null;
-  max_hum: number | null;
-  is_exists: boolean;
+// =====================
+// ROOM TYPES
+// =====================
+export interface Rooms {
+  idRoom: string;
+  nameRoom: string;
+  ipArduino: string | null;
+  volumeRoom: number | null;
+  glazedSurface: number | null;
+  nbDoors: number | null;
+  nbExteriorWalls: number | null;
+  minTemp: number | null;
+  maxTemp: number | null;
+  isExists: boolean;
+}
+
+// =====================
+// SCHEDULE TYPES
+// =====================
+
+// Days of week strict typing
+export type WeekDay =
+  | 'monday'
+  | 'tuesday'
+  | 'wednesday'
+  | 'thursday'
+  | 'friday'
+  | 'saturday'
+  | 'sunday';
+
+export interface DaySchedule {
+  start: string; // ex: "08:00"
+  end: string;   // ex: "18:00"
+}
+
+// Weekly schedule map type
+export type WeeklySchedule = Record<WeekDay, DaySchedule>;
+
+// Room including schedule
+export interface RoomWithSchedule extends Rooms {
+  schedule: WeeklySchedule;
 }
 
 export interface CreateRoomRequest {
-  name_room: string;
-  ip_arduino?: string;
-  volume_room?: number;
-  glazed_surface?: number;
-  nb_doors?: number;
-  nb_exterior_walls?: number;
-  co2_threshold?: number;
-  min_temp?: number;
-  max_temp?: number;
-  min_hum?: number;
-  max_hum?: number;
+  nameRoom: string;
+  ipArduino?: string;
+  volumeRoom?: number;
+  glazedSurface?: number;
+  nbDoors?: number;
+  nbExteriorWalls?: number;
+  minTemp?: number;
+  maxTemp?: number;
+  schedule?: Partial<WeeklySchedule>;
+  isExists: boolean;
 }
 
 export interface UpdateRoomRequest extends Partial<CreateRoomRequest> {
-  id_room: string;
+  idRoom: string;
 }
 
-// Measurement dataset types
+// =====================
+// MEASUREMENTS TYPES
+// =====================
 export interface MeasurementData {
-  id_data: number;
+  idData: number;
   timestamp: Date;
-  value_co2: number | null;
-  value_temp: number | null;
-  value_hum: number | null;
-  clim_status: boolean | null;
-  id_room: string;
+  valueCO2: number | null;
+  valueTemp: number | null;
+  valueHum?: number | null;
+  climStatus: boolean | null;
+  idRoom: string;
 }
 
 export interface ArduinoPublishRequest {
-  id_room: string;
-  value_co2?: number;
-  value_temp?: number;
-  value_hum?: number;
-  clim_status?: boolean;
+  timestamp: Date;
+  valueCO2?: number;
+  valueTemp?: number;
+  valueHum?: number;
+  climStatus?: boolean;
+  idRoom: string;
 }
 
-// Schedule types
-export interface RoomSchedule {
-  id_horaire: number;
-  day_of_week: 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday' | 'Sunday';
-  start_time: string | null;
-  end_time: string | null;
-  id_room: string;
-}
-
-// Arduino config types
+// =====================
+// ARDUINO CONFIG TYPES
+// =====================
 export interface ArduinoTempConfig {
-  min_temp: number;
-  max_temp: number;
+  minTemp: number;
+  maxTemp: number;
 }
 
 export interface ArduinoHoursConfig {
   schedules: {
-    day_of_week: string;
+    day_of_week: WeekDay;
     start_time: string;
     end_time: string;
   }[];
 }
 
-// JWT payload
+// =====================
+// JWT PAYLOAD
+// =====================
 export interface JWTPayload {
   id: number;
   username: string;
   role: string;
 }
 
-// Fastify JWT module augmentation
+// =====================
+// FASTIFY JWT MODULE AUGMENTATION
+// =====================
 declare module '@fastify/jwt' {
   interface FastifyJWT {
     payload: JWTPayload;

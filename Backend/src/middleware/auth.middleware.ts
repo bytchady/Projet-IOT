@@ -1,11 +1,17 @@
-import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import { FastifyRequest, FastifyReply } from 'fastify';
 
-export function authMiddleware(fastify: FastifyInstance) {
+export function authMiddleware() {
   return async function (request: FastifyRequest, reply: FastifyReply) {
     try {
       await request.jwtVerify();
-    } catch (err) {
-      return reply.status(401).send({ error: 'Unauthorized: Invalid or missing token' });
+    } catch (error) {
+      request.log.error(error);
+      return reply
+        .code(401)
+        .send({
+          message: "Non autorisé: jeton invalide ou manquant",
+          error: true
+        });
     }
   };
 }

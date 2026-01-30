@@ -22,7 +22,7 @@
       <ul class="list-unstyled mb-4">
         <li class="mb-2 d-flex align-items-center flex-wrap">
           <i class="bi bi-box-seam me-2"></i>
-          Volume:
+          Volume :
           @if (!isEditing) {
             <span class="ms-1">{{ room.volumeRoom }} m<sup>3</sup></span>
           } @else {
@@ -35,7 +35,7 @@
 
         <li class="mb-2 d-flex align-items-center flex-wrap">
           <i class="bi bi-door-open me-2"></i>
-          Portes:
+          Portes :
           @if (!isEditing) {
             <span class="ms-1">{{ room.nbDoors }}</span>
           } @else {
@@ -48,7 +48,7 @@
 
         <li class="mb-2 d-flex align-items-center flex-wrap">
           <i class="bi bi-grid-3x2 me-2"></i>
-          Surfaces vitrées:
+          Surfaces vitrées :
           @if (!isEditing) {
             <span class="ms-1">{{ room.glazedSurface }} m<sup>2</sup></span>
           } @else {
@@ -61,7 +61,7 @@
 
         <li class="mb-2 d-flex align-items-center flex-wrap">
           <i class="bi bi-house me-2"></i>
-          Murs extérieurs:
+          Murs extérieurs :
           @if (!isEditing) {
             <span class="ms-1">{{ room.nbExteriorWalls }}</span>
           } @else {
@@ -69,6 +69,19 @@
               type="number"
               class="form-control form-control-sm ms-2"
               [(ngModel)]="room.nbExteriorWalls">
+          }
+        </li>
+
+        <li class="mb-2 d-flex align-items-center flex-wrap">
+          <i class="bi bi-cpu me-2"></i>
+          Ip du microcontrôleur :
+          @if (!isEditing) {
+            <span class="ms-1">{{ room.ipArduino }}</span>
+          } @else {
+            <input
+              type="number"
+              class="form-control form-control-sm ms-2"
+              [(ngModel)]="room.ipArduino">
           }
         </li>
       </ul>

@@ -25,8 +25,8 @@ export class ArduinoClientService {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          mintemp: config.min_temp,
-          maxtemp: config.max_temp
+          mintemp: config.minTemp,
+          maxtemp: config.maxTemp
         }),
         signal: controller.signal
       });

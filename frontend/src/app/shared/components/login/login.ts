@@ -4,7 +4,7 @@ import { AuthServices } from '../../../services/auth/auth.services';
 import { ServerMessagesServices } from '../../../services/server-messages/server-messages.services';
 import { Footer } from '../footer/footer';
 import { Header } from '../header/header';
-import {Router} from '@angular/router';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-login',
@@ -48,7 +48,7 @@ export class Login implements OnInit {
         }
       },
       error: (err) => {
-        const message = err.error?.message || 'Erreur de connexion';
+        const message = err.error?.message || "Erreur de connexion";
         this.serverMessageService.showMessage(message, true);
       }
     });
