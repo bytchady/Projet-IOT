@@ -1,11 +1,7 @@
 import { query } from '../config/database.js';
-import {
-  CreateRoomRequest, DaySchedule, Rooms, RoomWithSchedule,
-  UpdateRoomRequest, WeekDay, WeeklySchedule
-} from '../models/types.js';
+import { CreateRoomRequest, Rooms, RoomWithSchedule, UpdateRoomRequest, WeekDay } from '../models/types.js';
 
 export class RoomsService {
-
   private Days: WeekDay[] = [
     'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'
   ];
@@ -68,18 +64,12 @@ export class RoomsService {
   }
 
   async getRoomById(id: string): Promise<RoomWithSchedule | null> {
-    console.log('ID reçu:', id);
-
-    const result = await query('SELECT * FROM rooms WHERE id_room = $1 AND is_exists IS TRUE', [id]);
-
-    console.log('Résultat SQL:', result.rows);
-
+    const result = await query('SELECT * FROM rooms WHERE id_room = $1 AND is_exists = TRUE', [id]);
     if (!result.rows.length) return null;
     return this.mapDbRowToRoom(result.rows[0]);
   }
 
   async createRoom(data: CreateRoomRequest): Promise<RoomWithSchedule> {
-
     const values = [
       data.nameRoom,
       data.ipArduino,
@@ -135,7 +125,6 @@ export class RoomsService {
       }
     }
 
-    // 🔹 Champs horaires
     if (schedule) {
       for (const day of this.Days) {
         const daySchedule = schedule[day];

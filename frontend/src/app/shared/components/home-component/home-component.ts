@@ -1,4 +1,4 @@
-import { Component, OnInit, HostListener, ViewChild } from '@angular/core';
+import { Component, OnInit, HostListener, ViewChild, ChangeDetectorRef } from '@angular/core';
 import { SearchBar } from '../search-bar/search-bar';
 import { RoomCard } from '../room-card/room-card';
 import { FormsModule } from '@angular/forms';
@@ -6,7 +6,7 @@ import { Room } from '../../../models/room';
 import { RoomsServices } from '../../../services/rooms/rooms.service';
 import { ServerMessagesServices } from '../../../services/server-messages/server-messages.services';
 import { RouterLink } from '@angular/router';
-import {AuthServices} from '../../../services/auth/auth.services';
+import { AuthServices } from '../../../services/auth/auth.services';
 
 @Component({
   selector: 'app-home-component',
@@ -20,34 +20,44 @@ export class HomeComponent implements OnInit {
   pagedRooms: Room[] = [];
   newRoomName: string = '';
 
+  isLoading: boolean = true;
+
   currentPage: number = 1;
   rowsPerPage: number = 2;
   cardsPerRow: number = 3;
   pageSize: number = this.rowsPerPage * this.cardsPerRow;
 
   isMobile: boolean = window.innerWidth < 576;
-  private lastCreatedRoomName: string | null = null;
 
   @ViewChild(SearchBar) searchBar!: SearchBar;
 
   constructor(
     private roomsServices: RoomsServices,
     private serverMessagesServices: ServerMessagesServices,
-    private authServices: AuthServices
+    private cdr: ChangeDetectorRef  // ⬅️ AJOUT
   ) {}
 
-  ngOnInit() {
-    this.roomsServices.rooms$.subscribe(rooms => {
-      this.allRooms = rooms;
-      this.rooms = [...rooms];
-      this.updatePagedRooms();
+  ngOnInit(): void {
+    this.isLoading = true;
+
+    this.roomsServices.getRooms().subscribe({
+      next: rooms => {
+        console.log('ROOMS API:', rooms);
+        this.allRooms = [...rooms];
+        this.rooms = [...rooms];
+        this.currentPage = 1;
+        this.updatePagedRooms();
+        this.isLoading = false;
+        this.cdr.detectChanges();  // ⬅️ AJOUT - Force la détection
+      },
+      error: err => {
+        console.error('Erreur chargement salles', err);
+        this.serverMessagesServices.showMessage('Erreur serveur', true);
+        this.isLoading = false;
+        this.cdr.detectChanges();  // ⬅️ AJOUT - Force la détection
+      }
     });
-
-    if (this.authServices.isLoggedIn()) {
-      this.roomsServices.loadRooms();
-    }
   }
-
 
   @HostListener('window:resize', ['$event'])
   onResize(event: any) {
@@ -60,9 +70,7 @@ export class HomeComponent implements OnInit {
     const roomName = this.newRoomName.trim();
     if (!roomName) return;
 
-    this.lastCreatedRoomName = roomName;
-
-    const payload = {
+    const payload: Partial<Room> = {
       nameRoom: roomName,
       ipArduino: '0.0.0.0',
       volumeRoom: 0,
@@ -71,33 +79,39 @@ export class HomeComponent implements OnInit {
       nbExteriorWalls: 0,
       minTemp: 18,
       maxTemp: 24,
-      isExists: true
+      isExists: true,
+      schedule: {
+        monday: { start: '08:00', end: '18:00', isClosed: false },
+        tuesday: { start: '08:00', end: '18:00', isClosed: false },
+        wednesday: { start: '08:00', end: '18:00', isClosed: false },
+        thursday: { start: '08:00', end: '18:00', isClosed: false },
+        friday: { start: '08:00', end: '18:00', isClosed: false },
+        saturday: { start: null, end: null, isClosed: true },
+        sunday: { start: null, end: null, isClosed: true },
+      },
     };
 
+    console.log('📤 Envoi création salle:', payload);  // ⬅️ AJOUT
+
     this.roomsServices.createRoom(payload).subscribe({
-      next: (res) => {
+      next: res => {
+        console.log('✅ Réponse création:', res);  // ⬅️ AJOUT
+        this.serverMessagesServices.showMessage(res.message, res.error);
+
         if (!res.error && res.data) {
-          this.roomsServices.loadRooms();
-
-          const sub = this.roomsServices.rooms$.subscribe(rooms => {
-            const sortedRooms = [...rooms].sort((a, b) => a.nameRoom.localeCompare(b.nameRoom));
-            const index = sortedRooms.findIndex(r => r.idRoom === res.data.idRoom);
-            if (index !== -1) {
-              this.currentPage = Math.floor(index / this.pageSize) + 1;
-
-              this.rooms = sortedRooms;
-              this.updatePagedRooms();
-            }
-            sub.unsubscribe();
-          });
-
-          this.serverMessagesServices.showMessage(res.message, false);
-        } else {
-          this.serverMessagesServices.showMessage(res.message, true);
+          this.allRooms.unshift(res.data);
+          this.rooms = [...this.allRooms];
+          this.currentPage = 1;
+          this.updatePagedRooms();
+          this.cdr.detectChanges();  // ⬅️ AJOUT si vous avez ajouté ChangeDetectorRef
         }
       },
-      error: (err) => {
-        this.serverMessagesServices.showMessage(err.error?.message || 'Erreur serveur', true);
+      error: err => {
+        console.error('❌ Erreur création:', err);  // ⬅️ AJOUT
+        this.serverMessagesServices.showMessage(
+          err.error?.message || 'Erreur serveur',
+          true
+        );
       }
     });
 
@@ -112,7 +126,7 @@ export class HomeComponent implements OnInit {
       return;
     }
 
-    const filteredRooms = this.allRooms.filter(room =>
+    const filteredRooms = this.allRooms.filter((room) =>
       room.nameRoom.toLowerCase().includes(query.toLowerCase())
     );
 
@@ -179,15 +193,4 @@ export class HomeComponent implements OnInit {
   totalPages(): number {
     return Math.ceil(this.rooms.length / this.pageSize);
   }
-
-  private goToRoomPage(roomName: string) {
-    const index = this.rooms.findIndex(
-      r => r.nameRoom.toLowerCase() === roomName.toLowerCase()
-    );
-
-    if (index === -1) return;
-
-    this.currentPage = Math.floor(index / this.pageSize) + 1;
-  }
-
 }

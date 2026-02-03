@@ -1,128 +1,123 @@
 import { Injectable } from '@angular/core';
+import { BehaviorSubject, map, Observable } from 'rxjs';
+import { catchError, tap } from 'rxjs/operators';
+import { HttpClient } from '@angular/common/http';
 import { Room } from '../../models/room';
-import { BehaviorSubject, map, Observable, of, tap } from 'rxjs';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { ServerMessagesServices } from '../server-messages/server-messages.services';
+import { ApiResponse } from '../../models/api-response';
 import { AuthServices } from '../auth/auth.services';
 
-@Injectable({
-  providedIn: 'root'
-})
+@Injectable({ providedIn: 'root' })
 export class RoomsServices {
-  private apiUrl = 'http://localhost:3000/api/rooms';
-  private roomsSubject = new BehaviorSubject<Room[]>([]);
-  rooms$ = this.roomsSubject.asObservable();
+  private apiUrl = '/api/rooms';
+  private rooms = new BehaviorSubject<Room[]>([]);
 
   constructor(
     private http: HttpClient,
+    private serverMessageService: ServerMessagesServices,
     private authServices: AuthServices
-  ) {
-    if (this.authServices.isLoggedIn()) {
-      this.loadRooms();
-    }
-  }
+  ) {}
 
-  /* =======================
-     🔐 HEADERS
-  ======================= */
   private getAuthHeaders() {
-    const token = this.authServices.getToken();
-    return {
-      headers: new HttpHeaders({Authorization: `Bearer ${token || ''}`})
-    };
+    const token = this.authServices.getToken(); // récupère le JWT
+    return { Authorization: `Bearer ${token}` };
   }
 
-  loadRooms() {
-    this.http
-      .get<{ message: string; error: boolean; data: Room[] }>(
-        this.apiUrl,
-        this.getAuthHeaders()
-      )
-      .pipe(
-        map(res =>
-          res.error
-            ? []
-            : res.data.sort((a, b) => a.nameRoom.localeCompare(b.nameRoom))
-        )
-      )
-      .subscribe(rooms => {
-        this.roomsSubject.next(rooms);
-      });
-  }
-
-  private defaultSchedule() {
-    return {
-      monday: {start: '08:00', end: '18:00', isClosed: false},
-      tuesday: {start: '08:00', end: '18:00', isClosed: false},
-      wednesday: {start: '08:00', end: '18:00', isClosed: false},
-      thursday: {start: '08:00', end: '18:00', isClosed: false},
-      friday: {start: '08:00', end: '18:00', isClosed: false},
-      saturday: {start: null, end: null, isClosed: true},
-      sunday: {start: null, end: null, isClosed: true},
-    };
-  }
-
-  createRoom(room: Partial<Room>) {
-    const payload = {
-      ...room,
-      schedule: room.schedule || this.defaultSchedule()
-    };
-
-    return this.http
-      .put<{ message: string; error: boolean; data: Room }>(
-        this.apiUrl,
-        payload,
-        this.getAuthHeaders()
-      )
-      .pipe(
-        tap(res => {
-          if (!res.error && res.data) {
-            const current = this.roomsSubject.getValue();
-            this.roomsSubject.next(
-              [...current, res.data].sort((a, b) =>
-                a.nameRoom.localeCompare(b.nameRoom)
-              )
-            );
-          }
-        })
-      );
-  }
-
-  /* =======================
-     🗑 DELETE ROOM
-  ======================= */
-  deleteRoom(id: string) {
-    return this.http
-      .request<{ message: string; error: boolean }>('delete', this.apiUrl, {
-        ...this.getAuthHeaders(),
-        body: {idRoom: id}
+  getRooms(): Observable<Room[]> {
+    return this.http.get<ApiResponse<Room[]>>(this.apiUrl, {
+      headers: this.getAuthHeaders()
+    }).pipe(
+      map(res => res.data),
+      catchError(err => {
+        this.serverMessageService.showMessage(
+          err.error?.message || 'Erreur lors du chargement des salles',
+          true
+        );
+        throw err;
       })
-      .pipe(
-        tap(res => {
-          if (!res.error) {
-            const filtered = this.roomsSubject
-              .getValue()
-              .filter(r => r.idRoom !== id);
-            this.roomsSubject.next(filtered);
-          }
-        })
-      );
-  }
-
-  /* =======================
-     ✏️ UPDATE ROOM
-  ======================= */
-  updateRoom(room: Partial<Room> & { idRoom: string }) {
-    return this.http.patch<{ message: string; error: boolean; data: Room }>(
-      this.apiUrl,
-      room,
-      this.getAuthHeaders()
     );
   }
 
-  getRoomById(id: string): Observable<{ message: string; error: boolean; data?: Room }> {
-    return this.http.get<{ message: string; error: boolean; data: Room }>(
-      `${this.apiUrl}/${id}`,
-      this.getAuthHeaders()
+  getRoomById(id: string): Observable<Room | null> {
+    return this.http
+      .get<ApiResponse<Room>>(`${this.apiUrl}/${id}`, {
+        headers: this.getAuthHeaders()
+      })
+      .pipe(
+        map(res => res.data || null),
+        tap(res => {
+          if (res) {
+            // Optionnel : mettre à jour la liste locale si tu veux
+            const current = this.rooms.getValue();
+            const index = current.findIndex(r => r.idRoom === res.idRoom);
+            if (index === -1) {
+              this.rooms.next([res, ...current]);
+            }
+          }
+        }),
+        catchError(err => {
+          this.serverMessageService.showMessage(
+            err.error?.message || 'Erreur serveur',
+            true
+          );
+          throw err;
+        })
+      );
+  }
+
+
+  createRoom(room: Partial<Room>): Observable<ApiResponse<Room>> {
+    return this.http.post<ApiResponse<Room>>(this.apiUrl, room, {
+      headers: this.getAuthHeaders()
+    }).pipe(
+      tap(res => {
+        this.serverMessageService.showMessage(res.message, res.error);
+      }),
+      catchError(err => {
+        this.serverMessageService.showMessage(
+          err.error?.message || 'Erreur serveur',
+          true
+        );
+        throw err;
+      })
+    );
+  }
+
+  updateRoom(room: Room): Observable<Room> {
+    return this.http.put<Room>(`${this.apiUrl}/${room.idRoom}`, room, {
+      headers: this.getAuthHeaders()
+    }).pipe(
+      tap(updatedRoom => {
+        const current = this.rooms.getValue();
+        const index = current.findIndex(r => r.idRoom === updatedRoom.idRoom);
+        if (index !== -1) current[index] = updatedRoom;
+        this.rooms.next([...current]);
+      }),
+      catchError(err => {
+        this.serverMessageService.showMessage(
+          err.error?.message || 'Erreur lors de la mise à jour',
+          true
+        );
+        throw err;
+      })
+    );
+  }
+
+  deleteRoom(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/${id}`, {
+      headers: this.getAuthHeaders()
+    }).pipe(
+      tap(() => {
+        const current = this.rooms.getValue();
+        this.rooms.next(current.filter(r => r.idRoom !== id));
+      }),
+      catchError(err => {
+        this.serverMessageService.showMessage(
+          err.error?.message || 'Erreur lors de la suppression',
+          true
+        );
+        throw err;
+      })
     );
   }
 }

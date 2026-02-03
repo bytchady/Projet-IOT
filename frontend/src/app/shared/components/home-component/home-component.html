@@ -45,63 +45,82 @@
     </div>
 
     <div class="flex-grow-1 overflow-auto overflow-x-hidden">
-      <div class="row g-4">
+      <!-- Affichage pendant le chargement -->
+      @if (isLoading) {
+        <div class="loading-container text-center py-5">
+          <div class="spinner-border text-primary mb-3" role="status">
+            <span class="visually-hidden">Chargement...</span>
+          </div>
+          <p class="text-muted">Salles en cours de chargement...</p>
+        </div>
+      }
+
+      <!-- Affichage quand les données sont chargées -->
+      @if (!isLoading) {
+        <!-- Si aucune salle disponible -->
+        @if (rooms.length === 0) {
+          <div class="no-rooms text-center py-5">
+            <p class="text-muted fs-5">Aucune salle disponible</p>
+          </div>
+        }
+
+        <!-- Si des salles existent -->
         @if (rooms.length > 0) {
-          @for (room of pagedRooms; track room.idRoom) {
-            <div class="col-12 col-sm-6 col-md-4">
-              <app-room-card [room]="room"></app-room-card>
-            </div>
-          }
-        } @else {
-          <p>Aucune salle disponible</p>
+          <div class="row g-4">
+            @for (room of pagedRooms; track room.idRoom) {
+              <div class="col-12 col-sm-6 col-md-4">
+                <app-room-card [room]="room"></app-room-card>
+              </div>
+            }
+
+            @if (totalPages() > 1) {
+              <nav class="bottom-0 mt-3 d-flex justify-content-center py-2" style="z-index:10;">
+                <!-- Pagination desktop -->
+                <ul class="pagination mb-0 flex-wrap justify-content-center d-none d-sm-flex">
+                  <li class="page-item" [class.disabled]="currentPage === 1">
+                    <button class="page-link" (click)="prevPage()"
+                            style="background-color:#f0f0f0;color:#555;border:1px solid #dcdcdc;min-width:40px;">
+                      &lt;
+                    </button>
+                  </li>
+
+                  @for (page of getVisiblePages(); track page) {
+                    <li class="page-item" [class.active]="currentPage === page">
+                      <button class="page-link"
+                              (click)="goToPage(page)"
+                              [style.background-color]="currentPage === page ? '#555' : '#f0f0f0'"
+                              [style.color]="currentPage === page ? '#fff' : '#555'"
+                              style="border:1px solid #dcdcdc;min-width:40px;">
+                        {{ page }}
+                      </button>
+                    </li>
+                  }
+
+                  <li class="page-item" [class.disabled]="currentPage === totalPages()">
+                    <button class="page-link" (click)="nextPage()"
+                            style="background-color:#f0f0f0;color:#555;border:1px solid #dcdcdc;min-width:40px;">
+                      &gt;
+                    </button>
+                  </li>
+                </ul>
+
+                <!-- Pagination mobile -->
+                <ul class="pagination mb-0 d-flex d-sm-none justify-content-center">
+                  <li class="page-item" [class.disabled]="currentPage === 1">
+                    <button class="page-link bg-body text-body border" (click)="prevPage()"
+                            style="min-width:50px;">&lt;</button>
+                  </li>
+
+                  <li class="page-item" [class.disabled]="currentPage === totalPages()">
+                    <button class="page-link bg-body text-body border" (click)="nextPage()"
+                            style="min-width:50px;">&gt;</button>
+                  </li>
+                </ul>
+              </nav>
+            }
+          </div>
         }
-
-        @if (totalPages() > 1) {
-          <nav class="bottom-0 mt-3 d-flex justify-content-center py-2" style="z-index:10;">
-            <!-- Pagination desktop -->
-            <ul class="pagination mb-0 flex-wrap justify-content-center d-none d-sm-flex">
-              <li class="page-item" [class.disabled]="currentPage === 1">
-                <button class="page-link" (click)="prevPage()"
-                        style="background-color:#f0f0f0;color:#555;border:1px solid #dcdcdc;min-width:40px;">
-                  &lt;
-                </button>
-              </li>
-
-              @for (page of getVisiblePages(); track page) {
-                <li class="page-item" [class.active]="currentPage === page">
-                  <button class="page-link"
-                          (click)="goToPage(page)"
-                          [style.background-color]="currentPage === page ? '#555' : '#f0f0f0'"
-                          [style.color]="currentPage === page ? '#fff' : '#555'"
-                          style="border:1px solid #dcdcdc;min-width:40px;">
-                    {{ page }}
-                  </button>
-                </li>
-              }
-
-              <li class="page-item" [class.disabled]="currentPage === totalPages()">
-                <button class="page-link" (click)="nextPage()"
-                        style="background-color:#f0f0f0;color:#555;border:1px solid #dcdcdc;min-width:40px;">
-                  &gt;
-                </button>
-              </li>
-            </ul>
-
-            <!-- Pagination mobile -->
-            <ul class="pagination mb-0 d-flex d-sm-none justify-content-center">
-              <li class="page-item" [class.disabled]="currentPage === 1">
-                <button class="page-link bg-body text-body border" (click)="prevPage()"
-                        style="min-width:50px;">&lt;</button>
-              </li>
-
-              <li class="page-item" [class.disabled]="currentPage === totalPages()">
-                <button class="page-link bg-body text-body border" (click)="nextPage()"
-                        style="min-width:50px;">&gt;</button>
-              </li>
-            </ul>
-          </nav>
-        }
-      </div>
+      }
     </div>
   </div>
 </div>
