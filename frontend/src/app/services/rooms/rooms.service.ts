@@ -31,9 +31,6 @@ export class RoomsServices {
     };
   }
 
-  /* =======================
-     📥 LOAD ALL ROOMS
-  ======================= */
   loadRooms() {
     this.http
       .get<{ message: string; error: boolean; data: Room[] }>(
@@ -122,31 +119,10 @@ export class RoomsServices {
     );
   }
 
-  /* =======================
-     🔍 GET ROOM BY ID (CACHE + API)
-  ======================= */
-
-  // rooms.service.ts
   getRoomById(id: string): Observable<{ message: string; error: boolean; data?: Room }> {
-    const cached = this.roomsSubject
-      .getValue()
-      .find(r => r.idRoom === id);
-
-    if (cached) {
-      return of({message: 'Salle récupérée depuis le cache', error: false, data: cached});
-    }
-
-    return this.http
-      .get<{ message: string; error: boolean; data: Room }>(
-        `${this.apiUrl}/${id}`,
-        this.getAuthHeaders()
-      )
-      .pipe(
-        tap(res => {
-          if (!res.error && res.data) {
-            this.roomsSubject.next([...this.roomsSubject.getValue(), res.data]);
-          }
-        })
-      );
+    return this.http.get<{ message: string; error: boolean; data: Room }>(
+      `${this.apiUrl}/${id}`,
+      this.getAuthHeaders()
+    );
   }
 }

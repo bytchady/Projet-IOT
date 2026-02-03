@@ -1,6 +1,14 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { RoomsService } from '../services/rooms.service.js';
-import { CreateRoomRequest, DaySchedule, Rooms, UpdateRoomRequest } from '../models/types.js';
+import {
+  CreateRoomRequest,
+  DaySchedule,
+  Rooms,
+  RoomWithSchedule,
+  UpdateRoomRequest,
+  WeekDay,
+  WeeklySchedule
+} from '../models/types.js';
 import { AppError, NotFoundError, BadRequestError, ConflictError } from '../utils/errors.js';
 
 export class RoomsController {
@@ -15,37 +23,6 @@ export class RoomsController {
     saturday: "samedi",
     sunday: "dimanche"
   };
-
-  private formatTimeHHMM(time: string | undefined): string {
-    if (!time) return '';
-    const [h, m] = time.split(':');
-    if (h === undefined || m === undefined) return '';
-    return `${h.padStart(2,'0')}:${m.padStart(2,'0')}`;
-  }
-
-  private normalizeRoom(room: any): Rooms {
-    const roundTemp = (temp: number) => temp !== undefined ? Math.round(temp) : 0;
-
-    const days = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'];
-    const schedule: Record<string, {start: string, end: string, isClosed: boolean}> = {};
-
-    for (const day of days) {
-      const isClosed = Boolean(room[`${day}_closed`]);
-
-      schedule[day] = {
-        isClosed,
-        start: isClosed ? null : room[`${day}_start`]?.slice(0,5) || '08:00',
-        end:   isClosed ? null : room[`${day}_end`]?.slice(0,5) || '18:00'
-      };
-    }
-
-    return {
-      ...room,
-      minTemp: roundTemp(room.minTemp),
-      maxTemp: roundTemp(room.maxTemp),
-      schedule
-    };
-  }
 
   private validateRoomFields(roomData: any) {
     const TIME_REGEX = /^([01]\d|2[0-3]):(00|30)$/;
@@ -104,21 +81,12 @@ export class RoomsController {
   }
 
   async getAllRooms(request: FastifyRequest, reply: FastifyReply) {
-
     try {
       const rooms = await this.roomsService.getAllRooms();
-      if (rooms.length === 0) {
-        return reply.send({
-          message: "Aucune salle disponible",
-          error: false,
-          data: []
-        });
-      }
-
       return reply.send({
         message: "Liste des salles récupérée avec succès",
         error: false,
-        data: rooms.map(r => this.normalizeRoom(r))
+        data: rooms // déjà normalisé dans le service
       });
     } catch (err) {
       return this.handleError(err, request, reply);
@@ -128,14 +96,12 @@ export class RoomsController {
   async getRoomById(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
     try {
       const room = await this.roomsService.getRoomById(request.params.id);
-      if (!room) {
-        throw new NotFoundError("Salle introuvable");
-      }
+      if (!room) throw new NotFoundError("Salle introuvable");
 
       return reply.send({
         message: "Salle récupérée avec succès",
         error: false,
-        data: this.normalizeRoom(room)
+        data: room // déjà normalisé
       });
     } catch (err) {
       return this.handleError(err, request, reply);
@@ -164,7 +130,7 @@ export class RoomsController {
       return reply.code(201).send({
         message: "Salle créée avec succès",
         error: false,
-        data: this.normalizeRoom(room)
+        data: room
       });
     } catch (err) {
       return this.handleError(err, request, reply);
@@ -186,7 +152,6 @@ export class RoomsController {
         throw new NotFoundError("Salle introuvable");
       }
 
-      const normalizedRoom = this.normalizeRoom(room);
       const tempUpdated =
         roomData.minTemp !== undefined ||
         roomData.maxTemp !== undefined;
@@ -194,7 +159,7 @@ export class RoomsController {
       return reply.send({
         message: "Salle mise à jour avec succès",
         error: false,
-        data: normalizedRoom,
+        data: room,
         arduino_sync:
           tempUpdated && room.ipArduino
             ? {

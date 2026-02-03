@@ -22,15 +22,43 @@ export class RoomsService {
       minTemp: row.min_temp,
       maxTemp: row.max_temp,
       isExists: row.is_exists,
-      schedule: this.Days.reduce((acc, day) => {
-        const isClosed = row[`${day}_closed`];
-        acc[day] = {
-          isClosed,
-          start: row[`${day}_start`] || null,
-          end: row[`${day}_end`] || null
-        };
-        return acc;
-      }, {} as WeeklySchedule)
+      schedule: {
+        monday: {
+          isClosed: row.monday_closed,
+          start: row.monday_start ? row.monday_start.toString().slice(0,5) : null,
+          end:   row.monday_end   ? row.monday_end.toString().slice(0,5) : null,
+        },
+        tuesday: {
+          isClosed: row.tuesday_closed,
+          start: row.tuesday_start ? row.tuesday_start.toString().slice(0,5) : null,
+          end:   row.tuesday_end   ? row.tuesday_end.toString().slice(0,5) : null,
+        },
+        wednesday: {
+          isClosed: row.wednesday_closed,
+          start: row.wednesday_start ? row.wednesday_start.toString().slice(0,5) : null,
+          end:   row.wednesday_end   ? row.wednesday_end.toString().slice(0,5) : null,
+        },
+        thursday: {
+          isClosed: row.thursday_closed,
+          start: row.thursday_start ? row.thursday_start.toString().slice(0,5) : null,
+          end:   row.thursday_end   ? row.thursday_end.toString().slice(0,5) : null,
+        },
+        friday: {
+          isClosed: row.friday_closed,
+          start: row.friday_start ? row.friday_start.toString().slice(0,5) : null,
+          end:   row.friday_end   ? row.friday_end.toString().slice(0,5) : null,
+        },
+        saturday: {
+          isClosed: row.saturday_closed,
+          start: row.saturday_start ? row.saturday_start.toString().slice(0,5) : null,
+          end:   row.saturday_end   ? row.saturday_end.toString().slice(0,5) : null,
+        },
+        sunday: {
+          isClosed: row.sunday_closed,
+          start: row.sunday_start ? row.sunday_start.toString().slice(0,5) : null,
+          end:   row.sunday_end   ? row.sunday_end.toString().slice(0,5) : null,
+        },
+      }
     };
   }
 
@@ -40,7 +68,11 @@ export class RoomsService {
   }
 
   async getRoomById(id: string): Promise<RoomWithSchedule | null> {
+    console.log('ID reçu:', id);
+
     const result = await query('SELECT * FROM rooms WHERE id_room = $1 AND is_exists IS TRUE', [id]);
+
+    console.log('Résultat SQL:', result.rows);
 
     if (!result.rows.length) return null;
     return this.mapDbRowToRoom(result.rows[0]);
