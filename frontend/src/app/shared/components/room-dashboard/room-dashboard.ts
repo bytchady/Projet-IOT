@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, OnInit, ViewChild, ChangeDetectorRef } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
@@ -25,6 +25,7 @@ export class RoomDashboard implements OnInit {
   @ViewChild('humGraph') humGraph?: SensorGraph;
 
   room: Room | null = null;
+  isLoading: boolean = true;  // ⬅️ AJOUT
   isEditing = false;
   today = '';
   currentDayIndex = 0;
@@ -53,7 +54,8 @@ export class RoomDashboard implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private roomsService: RoomsServices,
-    private serverMessageService: ServerMessagesServices
+    private serverMessageService: ServerMessagesServices,
+    private cdr: ChangeDetectorRef  // ⬅️ AJOUT
   ) {}
 
   ngOnInit(): void {
@@ -64,18 +66,25 @@ export class RoomDashboard implements OnInit {
     }
 
     this.today = new Date().toLocaleDateString('fr-FR');
+    this.isLoading = true;  // ⬅️ AJOUT
 
     this.roomsService.getRoomById(id).subscribe({
       next: (room) => {
         if (!room) {
           this.serverMessageService.showMessage('Salle introuvable', true);
+          this.isLoading = false;  // ⬅️ AJOUT
+          this.cdr.detectChanges();  // ⬅️ AJOUT
           this.router.navigate(['/']);
           return;
         }
         this.room = room;
+        this.isLoading = false;  // ⬅️ AJOUT
+        this.cdr.detectChanges();  // ⬅️ AJOUT
       },
       error: () => {
         this.serverMessageService.showMessage('Erreur serveur', true);
+        this.isLoading = false;  // ⬅️ AJOUT
+        this.cdr.detectChanges();  // ⬅️ AJOUT
         this.router.navigate(['/']);
       },
     });
@@ -99,11 +108,8 @@ export class RoomDashboard implements OnInit {
         this.co2Graph?.ngOnChanges();
         this.humGraph?.ngOnChanges();
         this.isEditing = false;
-        this.serverMessageService.showMessage('Salle mise à jour avec succès', false);
-      },
-      error: () => {
-        this.serverMessageService.showMessage('Erreur lors de la mise à jour', true);
-      },
+        this.cdr.detectChanges();
+      }
     });
   }
 

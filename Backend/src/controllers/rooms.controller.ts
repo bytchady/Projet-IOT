@@ -137,17 +137,22 @@ export class RoomsController {
     }
   }
 
-  async updateRoom(request: FastifyRequest<{ Body: UpdateRoomRequest }>, reply: FastifyReply) {
+  async updateRoom(
+    request: FastifyRequest<{ Params: { id: string }, Body: UpdateRoomRequest }>,
+    reply: FastifyReply
+  ) {
+    const roomId = request.params.id;  // ⬅️ Récupération de l'ID depuis l'URL
     const roomData = request.body;
 
-    if (!roomData.idRoom?.trim()) {
+    if (!roomId?.trim()) {
       throw new BadRequestError("L'identifiant de la salle est requis");
     }
 
     this.validateRoomFields(roomData);
 
     try {
-      const room = await this.roomsService.updateRoom(roomData);
+      const room = await this.roomsService.updateRoom(roomId, roomData);
+
       if (!room) {
         throw new NotFoundError("Salle introuvable");
       }

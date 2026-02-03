@@ -34,7 +34,7 @@ export class HomeComponent implements OnInit {
   constructor(
     private roomsServices: RoomsServices,
     private serverMessagesServices: ServerMessagesServices,
-    private cdr: ChangeDetectorRef  // ⬅️ AJOUT
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -42,19 +42,20 @@ export class HomeComponent implements OnInit {
 
     this.roomsServices.getRooms().subscribe({
       next: rooms => {
-        console.log('ROOMS API:', rooms);
-        this.allRooms = [...rooms];
-        this.rooms = [...rooms];
+        const sortedRooms = rooms.sort((a, b) =>
+          a.nameRoom.localeCompare(b.nameRoom)
+        );
+        this.allRooms = [...sortedRooms];
+        this.rooms = [...sortedRooms];
         this.currentPage = 1;
         this.updatePagedRooms();
         this.isLoading = false;
-        this.cdr.detectChanges();  // ⬅️ AJOUT - Force la détection
+        this.cdr.detectChanges();
       },
       error: err => {
-        console.error('Erreur chargement salles', err);
         this.serverMessagesServices.showMessage('Erreur serveur', true);
         this.isLoading = false;
-        this.cdr.detectChanges();  // ⬅️ AJOUT - Force la détection
+        this.cdr.detectChanges();
       }
     });
   }
@@ -91,27 +92,32 @@ export class HomeComponent implements OnInit {
       },
     };
 
-    console.log('📤 Envoi création salle:', payload);  // ⬅️ AJOUT
-
     this.roomsServices.createRoom(payload).subscribe({
       next: res => {
-        console.log('✅ Réponse création:', res);  // ⬅️ AJOUT
         this.serverMessagesServices.showMessage(res.message, res.error);
 
         if (!res.error && res.data) {
-          this.allRooms.unshift(res.data);
+          this.allRooms.push(res.data);
+
+          this.allRooms.sort((a, b) => a.nameRoom.localeCompare(b.nameRoom));
           this.rooms = [...this.allRooms];
-          this.currentPage = 1;
+
+          const newRoomIndex = this.rooms.findIndex(
+            room => room.idRoom === res.data.idRoom
+          );
+
+          if (newRoomIndex !== -1) {
+            this.currentPage = Math.floor(newRoomIndex / this.pageSize) + 1;
+          } else {
+            this.currentPage = 1;
+          }
+
           this.updatePagedRooms();
-          this.cdr.detectChanges();  // ⬅️ AJOUT si vous avez ajouté ChangeDetectorRef
+          this.cdr.detectChanges();
         }
       },
       error: err => {
-        console.error('❌ Erreur création:', err);  // ⬅️ AJOUT
-        this.serverMessagesServices.showMessage(
-          err.error?.message || 'Erreur serveur',
-          true
-        );
+        this.serverMessagesServices.showMessage(err.error?.message || 'Erreur serveur', true);
       }
     });
 
@@ -153,7 +159,9 @@ export class HomeComponent implements OnInit {
   }
 
   updatePagedRooms() {
-    if (this.currentPage > this.totalPages()) this.currentPage = 1;
+    if (this.currentPage > this.totalPages() && this.totalPages() > 0) {
+      this.currentPage = this.totalPages();
+    }
     const start = (this.currentPage - 1) * this.pageSize;
     const end = start + this.pageSize;
     this.pagedRooms = this.rooms.slice(start, end);

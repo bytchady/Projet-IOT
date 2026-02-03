@@ -7,7 +7,11 @@ export async function roomsRoutes(fastify: FastifyInstance): Promise<void> {
   const roomsController = new RoomsController();
 
   // GET /api/rooms
-  fastify.get('/rooms', { preHandler: [authMiddleware()] }, roomsController.getAllRooms.bind(roomsController));
+  fastify.get(
+    '/rooms',
+    { preHandler: [authMiddleware()] },
+    roomsController.getAllRooms.bind(roomsController)
+  );
 
   // GET /api/rooms/:id
   fastify.get<{ Params: { id: string } }>(
@@ -16,19 +20,19 @@ export async function roomsRoutes(fastify: FastifyInstance): Promise<void> {
     roomsController.getRoomById.bind(roomsController)
   );
 
-  // PUT /api/rooms
-  fastify.put<{ Body: CreateRoomRequest }>(
+  // POST /api/rooms
+  fastify.post<{ Body: CreateRoomRequest }>(
     '/rooms',
     { preHandler: [authMiddleware()] },
     roomsController.createRoom.bind(roomsController)
   );
 
-  // PATCH /api/rooms
-  fastify.patch<{ Body: UpdateRoomRequest }>(
-    '/rooms',
+  // PUT /api/rooms
+  fastify.put<{ Params: { id: string }, Body: UpdateRoomRequest }>(
+    '/rooms/:id',
     { preHandler: [authMiddleware()] },
     roomsController.updateRoom.bind(roomsController)
-  );
+  )
 
   // DELETE /api/rooms
   fastify.delete<{ Body: { idRoom: string } }>(

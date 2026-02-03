@@ -24,30 +24,23 @@ export class RoomsServices {
   }
 
   getRooms(): Observable<Room[]> {
-    return this.http.get<ApiResponse<Room[]>>(this.apiUrl, {
-      headers: this.getAuthHeaders()
-    }).pipe(
-      map(res => res.data),
-      catchError(err => {
-        this.serverMessageService.showMessage(
-          err.error?.message || 'Erreur lors du chargement des salles',
-          true
-        );
-        throw err;
-      })
+    return this.http.get<ApiResponse<Room[]>>(this.apiUrl, {headers: this.getAuthHeaders()})
+      .pipe(
+        map(res => res.data),
+        catchError(err => {
+          this.serverMessageService.showMessage(err.error?.message || 'Erreur lors du chargement des salles', true);
+          throw err;
+        }
+      )
     );
   }
 
   getRoomById(id: string): Observable<Room | null> {
-    return this.http
-      .get<ApiResponse<Room>>(`${this.apiUrl}/${id}`, {
-        headers: this.getAuthHeaders()
-      })
+    return this.http.get<ApiResponse<Room>>(`${this.apiUrl}/${id}`, {headers: this.getAuthHeaders()})
       .pipe(
         map(res => res.data || null),
         tap(res => {
           if (res) {
-            // Optionnel : mettre à jour la liste locale si tu veux
             const current = this.rooms.getValue();
             const index = current.findIndex(r => r.idRoom === res.idRoom);
             if (index === -1) {
@@ -56,37 +49,34 @@ export class RoomsServices {
           }
         }),
         catchError(err => {
-          this.serverMessageService.showMessage(
-            err.error?.message || 'Erreur serveur',
-            true
-          );
+          this.serverMessageService.showMessage(err.error?.message || 'Erreur serveur', true);
           throw err;
-        })
-      );
+        }
+      )
+    );
   }
 
-
   createRoom(room: Partial<Room>): Observable<ApiResponse<Room>> {
-    return this.http.post<ApiResponse<Room>>(this.apiUrl, room, {
-      headers: this.getAuthHeaders()
-    }).pipe(
-      tap(res => {
-        this.serverMessageService.showMessage(res.message, res.error);
-      }),
-      catchError(err => {
-        this.serverMessageService.showMessage(
-          err.error?.message || 'Erreur serveur',
-          true
-        );
-        throw err;
-      })
+    return this.http.post<ApiResponse<Room>>(this.apiUrl, room, {headers: this.getAuthHeaders()})
+      .pipe(
+        tap(res => {this.serverMessageService.showMessage(res.message, res.error);
+        }),
+        catchError(err => {
+          this.serverMessageService.showMessage(err.error?.message || 'Erreur serveur', true);
+          throw err;
+        }
+      )
     );
   }
 
   updateRoom(room: Room): Observable<Room> {
-    return this.http.put<Room>(`${this.apiUrl}/${room.idRoom}`, room, {
+    return this.http.put<ApiResponse<Room>>(`${this.apiUrl}/${room.idRoom}`, room, {
       headers: this.getAuthHeaders()
     }).pipe(
+      map(res => {
+        this.serverMessageService.showMessage(res.message, res.error);
+        return res.data;  // ⬅️ Extraire la room de "data"
+      }),
       tap(updatedRoom => {
         const current = this.rooms.getValue();
         const index = current.findIndex(r => r.idRoom === updatedRoom.idRoom);
@@ -104,20 +94,17 @@ export class RoomsServices {
   }
 
   deleteRoom(id: string): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/${id}`, {
-      headers: this.getAuthHeaders()
-    }).pipe(
-      tap(() => {
-        const current = this.rooms.getValue();
-        this.rooms.next(current.filter(r => r.idRoom !== id));
-      }),
-      catchError(err => {
-        this.serverMessageService.showMessage(
-          err.error?.message || 'Erreur lors de la suppression',
-          true
-        );
-        throw err;
-      })
+    return this.http.delete<void>(`${this.apiUrl}/${id}`, {headers: this.getAuthHeaders()})
+      .pipe(
+        tap(() => {
+          const current = this.rooms.getValue();
+          this.rooms.next(current.filter(r => r.idRoom !== id));
+        }),
+        catchError(err => {
+          this.serverMessageService.showMessage(err.error?.message || 'Erreur lors de la suppression', true);
+          throw err;
+        }
+      )
     );
   }
 }

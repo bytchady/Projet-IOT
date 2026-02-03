@@ -111,8 +111,14 @@ export class RoomsService {
     return this.mapDbRowToRoom(result.rows[0]);
   }
 
-  async updateRoom(data: UpdateRoomRequest): Promise<RoomWithSchedule | null> {
-    const { idRoom, schedule, ...updateData } = data;
+  async updateRoom(roomId: string, data: UpdateRoomRequest): Promise<RoomWithSchedule | null> {
+    // ⬅️ Vérifier que la salle existe d'abord
+    const existingRoom = await this.getRoomById(roomId);
+    if (!existingRoom) {
+      return null;
+    }
+
+    const { schedule, ...updateData } = data;  // ⬅️ Plus besoin d'extraire idRoom
     const fields: string[] = [];
     const values: unknown[] = [];
     let i = 1;
@@ -125,6 +131,7 @@ export class RoomsService {
       }
     }
 
+    // 🔹 Gestion du schedule
     if (schedule) {
       for (const day of this.Days) {
         const daySchedule = schedule[day];
@@ -146,9 +153,13 @@ export class RoomsService {
       }
     }
 
-    if (!fields.length) return this.getRoomById(idRoom);
+    // ⬅️ Si aucun champ à mettre à jour, retourner la salle existante
+    if (!fields.length) {
+      return existingRoom;
+    }
 
-    values.push(idRoom);
+    // ⬅️ Ajouter l'ID à la fin des valeurs
+    values.push(roomId);
 
     const result = await query(
       `UPDATE rooms SET ${fields.join(', ')} WHERE id_room = $${i} AND is_exists = TRUE RETURNING *`,
@@ -156,9 +167,16 @@ export class RoomsService {
     );
 
     if (!result.rows.length) return null;
-    return this.mapDbRowToRoom(result.rows[0]);
-  }
 
+    const updatedRoom = this.mapDbRowToRoom(result.rows[0]);
+
+    // ⬅️ Synchroniser avec Arduino si les températures ont changé
+    if (data.minTemp !== undefined || data.maxTemp !== undefined) {
+      await this.syncTempConfigToArduino(updatedRoom);
+    }
+
+    return updatedRoom;
+  }
 
   async deleteRoom(id: string): Promise<boolean> {
     const result = await query(
