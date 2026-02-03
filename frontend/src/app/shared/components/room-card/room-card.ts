@@ -1,4 +1,4 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input } from '@angular/core';
 import { Room } from '../../../models/room';
 import {RouterLink} from '@angular/router';
 
@@ -10,12 +10,6 @@ import {RouterLink} from '@angular/router';
   templateUrl: './room-card.html',
   styleUrl: './room-card.scss',
 })
-export class RoomCard implements OnInit {
+export class RoomCard {
   @Input() room! : Room;
-
-  ngOnInit() {
-    if (!this.room.nameRoom) {
-      this.room.nameRoom= "Aucune salle";
-    }
-  }
 }

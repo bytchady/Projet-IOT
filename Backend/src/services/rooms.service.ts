@@ -10,30 +10,6 @@ export class RoomsService {
     'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'
   ];
 
-  async getAllRooms(): Promise<RoomWithSchedule[]> {
-    const result = await query('SELECT * FROM rooms WHERE is_exists = TRUE ORDER BY name_room');
-    return result.rows.map(row => this.mapDbRowToRoom(row));
-  }
-
-  async getRoomById(id: string): Promise<RoomWithSchedule | null> {
-    const result = await query('SELECT * FROM rooms WHERE id_room = $1 AND is_exists = TRUE', [id]);
-    if (!result.rows.length) return null;
-    return this.mapDbRowToRoom(result.rows[0]);
-  }
-
-  private normalizeSchedule(schedule?: Partial<WeeklySchedule>): WeeklySchedule {
-    const base: WeeklySchedule = {
-      monday: { start: '00:00', end: '00:00' },
-      tuesday: { start: '00:00', end: '00:00' },
-      wednesday: { start: '00:00', end: '00:00' },
-      thursday: { start: '00:00', end: '00:00' },
-      friday: { start: '00:00', end: '00:00' },
-      saturday: { start: '00:00', end: '00:00' },
-      sunday: { start: '00:00', end: '00:00' },
-    };
-    return { ...base, ...schedule };
-  }
-
   private mapDbRowToRoom(row: any): RoomWithSchedule {
     return {
       idRoom: row.id_room,
@@ -47,45 +23,67 @@ export class RoomsService {
       maxTemp: row.max_temp,
       isExists: row.is_exists,
       schedule: this.Days.reduce((acc, day) => {
+        const isClosed = row[`${day}_closed`];
         acc[day] = {
-          start: row[`${day}_start`] ?? '00:00',
-          end: row[`${day}_end`] ?? '00:00'
+          isClosed,
+          start: row[`${day}_start`] || null,
+          end: row[`${day}_end`] || null
         };
         return acc;
       }, {} as WeeklySchedule)
     };
   }
 
+  async getAllRooms(): Promise<RoomWithSchedule[]> {
+    const result = await query('SELECT * FROM rooms WHERE is_exists = TRUE ORDER BY name_room');
+    return result.rows.map(row => this.mapDbRowToRoom(row));
+  }
+
+  async getRoomById(id: string): Promise<RoomWithSchedule | null> {
+    const result = await query('SELECT * FROM rooms WHERE id_room = $1 AND is_exists IS TRUE', [id]);
+
+    if (!result.rows.length) return null;
+    return this.mapDbRowToRoom(result.rows[0]);
+  }
+
   async createRoom(data: CreateRoomRequest): Promise<RoomWithSchedule> {
-    const schedule = this.normalizeSchedule(data.schedule);
+
+    const values = [
+      data.nameRoom,
+      data.ipArduino,
+      data.volumeRoom,
+      data.glazedSurface,
+      data.nbDoors,
+      data.nbExteriorWalls,
+      data.minTemp,
+      data.maxTemp,
+      data.schedule.monday.start, data.schedule.monday.end, data.schedule.monday.isClosed,
+      data.schedule.tuesday.start, data.schedule.tuesday.end, data.schedule.tuesday.isClosed,
+      data.schedule.wednesday.start, data.schedule.wednesday.end, data.schedule.wednesday.isClosed,
+      data.schedule.thursday.start, data.schedule.thursday.end, data.schedule.thursday.isClosed,
+      data.schedule.friday.start, data.schedule.friday.end, data.schedule.friday.isClosed,
+      data.schedule.saturday.start, data.schedule.saturday.end, data.schedule.saturday.isClosed,
+      data.schedule.sunday.start, data.schedule.sunday.end, data.schedule.sunday.isClosed,
+      true
+    ];
+
+
     const result = await query(
       `INSERT INTO rooms (
         name_room, ip_arduino, volume_room, glazed_surface,
         nb_doors, nb_exterior_walls, min_temp, max_temp,
-        monday_start, monday_end,
-        tuesday_start, tuesday_end,
-        wednesday_start, wednesday_end,
-        thursday_start, thursday_end,
-        friday_start, friday_end,
-        saturday_start, saturday_end,
-        sunday_start, sunday_end,
+        monday_start, monday_end, monday_closed,
+        tuesday_start, tuesday_end, tuesday_closed,
+        wednesday_start, wednesday_end, wednesday_closed,
+        thursday_start, thursday_end, thursday_closed,
+        friday_start, friday_end, friday_closed,
+        saturday_start, saturday_end, saturday_closed,
+        sunday_start, sunday_end, sunday_closed,
         is_exists
-      ) VALUES (
-                 $1,$2,$3,$4,$5,$6,$7,$8,
-                 $9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,
-                 TRUE
-               ) RETURNING *`,
-      [
-        data.nameRoom, data.ipArduino ?? null, data.volumeRoom ?? null, data.glazedSurface ?? null,
-        data.nbDoors ?? null, data.nbExteriorWalls ?? null, data.minTemp ?? null, data.maxTemp ?? null,
-        schedule.monday.start, schedule.monday.end,
-        schedule.tuesday.start, schedule.tuesday.end,
-        schedule.wednesday.start, schedule.wednesday.end,
-        schedule.thursday.start, schedule.thursday.end,
-        schedule.friday.start, schedule.friday.end,
-        schedule.saturday.start, schedule.saturday.end,
-        schedule.sunday.start, schedule.sunday.end
-      ]
+      )
+       VALUES (${values.map((_, idx) => `$${idx + 1}`).join(', ')})
+         RETURNING *`,
+      values
     );
 
     return this.mapDbRowToRoom(result.rows[0]);
@@ -93,12 +91,11 @@ export class RoomsService {
 
   async updateRoom(data: UpdateRoomRequest): Promise<RoomWithSchedule | null> {
     const { idRoom, schedule, ...updateData } = data;
-
     const fields: string[] = [];
     const values: unknown[] = [];
     let i = 1;
 
-    // Standard fields
+    // 🔹 Champs standards
     for (const [key, value] of Object.entries(updateData)) {
       if (value !== undefined) {
         fields.push(`${this.camelToSnake(key)} = $${i++}`);
@@ -106,14 +103,25 @@ export class RoomsService {
       }
     }
 
-    // Schedule fields
+    // 🔹 Champs horaires
     if (schedule) {
-      const normalized = this.normalizeSchedule(schedule);
       for (const day of this.Days) {
+        const daySchedule = schedule[day];
+
+        if (!daySchedule) continue; // pas de changement si non fourni
+
+        // Si la salle est fermée, on met start/end à null
+        const start = daySchedule.isClosed ? null : daySchedule.start ?? null;
+        const end = daySchedule.isClosed ? null : daySchedule.end ?? null;
+
         fields.push(`${day}_start = $${i++}`);
-        values.push(normalized[day].start);
+        values.push(start);
+
         fields.push(`${day}_end = $${i++}`);
-        values.push(normalized[day].end);
+        values.push(end);
+
+        fields.push(`${day}_closed = $${i++}`);
+        values.push(daySchedule.isClosed);
       }
     }
 
@@ -127,17 +135,9 @@ export class RoomsService {
     );
 
     if (!result.rows.length) return null;
-
-    const room = this.mapDbRowToRoom(result.rows[0]);
-
-    // Arduino sync si temp modifiée
-    const tempUpdated = updateData.minTemp !== undefined || updateData.maxTemp !== undefined;
-    if (tempUpdated && room.ipArduino) {
-      await this.syncTempConfigToArduino(room);
-    }
-
-    return room;
+    return this.mapDbRowToRoom(result.rows[0]);
   }
+
 
   async deleteRoom(id: string): Promise<boolean> {
     const result = await query(

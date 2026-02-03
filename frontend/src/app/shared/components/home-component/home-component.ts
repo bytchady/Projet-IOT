@@ -26,6 +26,7 @@ export class HomeComponent implements OnInit {
   pageSize: number = this.rowsPerPage * this.cardsPerRow;
 
   isMobile: boolean = window.innerWidth < 576;
+  private lastCreatedRoomName: string | null = null;
 
   @ViewChild(SearchBar) searchBar!: SearchBar;
 
@@ -55,33 +56,41 @@ export class HomeComponent implements OnInit {
     this.updatePagedRooms();
   }
 
-  /** Création d'une nouvelle salle */
   onAddRoom() {
+    const roomName = this.newRoomName.trim();
+    if (!roomName) return;
+
+    this.lastCreatedRoomName = roomName;
+
     const payload = {
-      nameRoom: this.newRoomName.trim(),
+      nameRoom: roomName,
       ipArduino: '0.0.0.0',
       volumeRoom: 0,
       glazedSurface: 0,
       nbDoors: 0,
       nbExteriorWalls: 0,
-      minTemp: 0,
-      maxTemp: 0,
-      schedule: {
-        monday: { start: '00:00', end: '00:00' },
-        tuesday: { start: '00:00', end: '00:00' },
-        wednesday: { start: '00:00', end: '00:00' },
-        thursday: { start: '00:00', end: '00:00' },
-        friday: { start: '00:00', end: '00:00' },
-        saturday: { start: '00:00', end: '00:00' },
-        sunday: { start: '00:00', end: '00:00' },
-      },
+      minTemp: 18,
+      maxTemp: 24,
       isExists: true
     };
 
     this.roomsServices.createRoom(payload).subscribe({
       next: (res) => {
-        if (!res.error) {
+        if (!res.error && res.data) {
           this.roomsServices.loadRooms();
+
+          const sub = this.roomsServices.rooms$.subscribe(rooms => {
+            const sortedRooms = [...rooms].sort((a, b) => a.nameRoom.localeCompare(b.nameRoom));
+            const index = sortedRooms.findIndex(r => r.idRoom === res.data.idRoom);
+            if (index !== -1) {
+              this.currentPage = Math.floor(index / this.pageSize) + 1;
+
+              this.rooms = sortedRooms;
+              this.updatePagedRooms();
+            }
+            sub.unsubscribe();
+          });
+
           this.serverMessagesServices.showMessage(res.message, false);
         } else {
           this.serverMessagesServices.showMessage(res.message, true);
@@ -95,7 +104,6 @@ export class HomeComponent implements OnInit {
     this.newRoomName = '';
   }
 
-  /** Recherche de salle */
   onSearchRoom(query: string) {
     this.currentPage = 1;
     if (!query) {
@@ -119,7 +127,6 @@ export class HomeComponent implements OnInit {
     this.serverMessagesServices.clearMessage();
   }
 
-  /** Pagination et affichage */
   updatePageSettings() {
     if (this.isMobile) {
       this.rowsPerPage = 1;
@@ -172,4 +179,15 @@ export class HomeComponent implements OnInit {
   totalPages(): number {
     return Math.ceil(this.rooms.length / this.pageSize);
   }
+
+  private goToRoomPage(roomName: string) {
+    const index = this.rooms.findIndex(
+      r => r.nameRoom.toLowerCase() === roomName.toLowerCase()
+    );
+
+    if (index === -1) return;
+
+    this.currentPage = Math.floor(index / this.pageSize) + 1;
+  }
+
 }

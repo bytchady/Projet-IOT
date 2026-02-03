@@ -1,195 +1,168 @@
-<div class="container-fluid p-0">
-  <div class="row g-0 d-flex flex-column flex-md-row">
-    <!-- Côté gauche : salle info + sliders -->
-    <div class="col-12 col-md-3 d-flex flex-column p-3 bg-body text-body">
-      <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap">
-        <h3>Informations</h3>
+@if (room; as r){
+  <div class="container-fluid p-0">
+    <div class="row g-0 d-flex flex-column flex-md-row">
+      <!-- Côté gauche : salle info + sliders -->
+      <div class="col-12 col-md-3 d-flex flex-column p-3 bg-body text-body">
+        <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap">
+          <h3>Informations</h3>
 
-        <div class="d-flex gap-2 flex-wrap mt-2 mt-md-0">
-          <button class="btn btn-sm btn-outline-primary" (click)="toggleEdit()">
+          <div class="d-flex gap-2 flex-wrap mt-2 mt-md-0">
+            <button class="btn btn-sm btn-outline-primary" (click)="toggleEdit()">
+              @if (!isEditing) {
+                <i class="bi bi-pencil"></i>
+              } @else {
+                <i class="bi bi-save me-1"></i> Enregistrer
+              }
+            </button>
+            <button class="btn btn-sm btn-outline-danger" (click)="onDeleteRoom()">
+              <i class="bi bi-trash"></i>
+            </button>
+          </div>
+        </div>
+
+        <ul class="list-unstyled mb-4">
+          <li class="mb-2 d-flex align-items-center flex-wrap">
+            <i class="bi bi-box-seam me-2"></i>
+            Volume :
             @if (!isEditing) {
-              <i class="bi bi-pencil"></i>
+              <span class="ms-1">{{ r.volumeRoom }} m<sup>3</sup></span>
             } @else {
-              <i class="bi bi-save me-1"></i> Enregistrer
+              <input
+                type="number"
+                class="form-control form-control-sm ms-2"
+                [(ngModel)]="r.volumeRoom">
             }
-          </button>
-          <button class="btn btn-sm btn-outline-danger" (click)="onDeleteRoom()">
-            <i class="bi bi-trash"></i>
-          </button>
+          </li>
+
+          <li class="mb-2 d-flex align-items-center flex-wrap">
+            <i class="bi bi-door-open me-2"></i>
+            Portes :
+            @if (!isEditing) {
+              <span class="ms-1">{{ r.nbDoors }}</span>
+            } @else {
+              <input
+                type="number"
+                class="form-control form-control-sm ms-2"
+                [(ngModel)]="r.nbDoors">
+            }
+          </li>
+
+          <li class="mb-2 d-flex align-items-center flex-wrap">
+            <i class="bi bi-grid-3x2 me-2"></i>
+            Surfaces vitrées :
+            @if (!isEditing) {
+              <span class="ms-1">{{ r.glazedSurface }} m<sup>2</sup></span>
+            } @else {
+              <input
+                type="number"
+                class="form-control form-control-sm ms-2"
+                [(ngModel)]="r.glazedSurface">
+            }
+          </li>
+
+          <li class="mb-2 d-flex align-items-center flex-wrap">
+            <i class="bi bi-house me-2"></i>
+            Murs extérieurs :
+            @if (!isEditing) {
+              <span class="ms-1">{{ r.nbExteriorWalls }}</span>
+            } @else {
+              <input
+                type="number"
+                class="form-control form-control-sm ms-2"
+                [(ngModel)]="r.nbExteriorWalls">
+            }
+          </li>
+        </ul>
+
+        <div class="mb-3">
+          <label class="form-label d-flex align-items-center gap-2">
+            <i class="bi bi-thermometer-half text-danger"></i>
+            Température min : {{ r.minTemp }} °C
+          </label>
+          <input
+            type="range"
+            class="form-range"
+            min="16"
+            max="26"
+            step="1"
+            [value]="r.minTemp"
+            [disabled]="!isEditing"
+            (input)="onMinTempChange($event)">
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label d-flex align-items-center gap-2">
+            <i class="bi bi-thermometer-high text-danger"></i>
+            Température max : {{ r.maxTemp }} °C
+          </label>
+          <input
+            type="range"
+            class="form-range"
+            min="16"
+            max="26"
+            step="1"
+            [value]="r.maxTemp"
+            [disabled]="!isEditing"
+            (input)="onMaxTempChange($event)">
+        </div>
+
+        <!-- Horaires semaine -->
+        <h5 class="mt-4 mb-3">Horaires de la semaine</h5>
+        <div class="d-flex align-items-center gap-2">
+          <button class="btn btn-sm btn-outline-secondary" (click)="prevDay()">&lt;</button>
+
+          <div class="flex-grow-1 border rounded p-3 bg-body text-center">
+            <div class="fw-bold mb-2">{{ dayTranslations[weekDays[currentDayIndex]] }}</div>
+
+            <div class="d-flex justify-content-center gap-2 mb-2">
+              <div>
+                <label class="form-label mb-0">Début</label>
+                <input type="text"
+                       class="form-control form-control-sm"
+                       [(ngModel)]="room.schedule[weekDays[currentDayIndex]].start"
+                       [disabled]="!isEditing || room.schedule[weekDays[currentDayIndex]].isClosed"
+                       placeholder="HH:mm">
+
+              </div>
+
+              <div>
+                <label class="form-label mb-0">Fin</label>
+                <input type="text"
+                       class="form-control form-control-sm"
+                       [(ngModel)]="room.schedule[weekDays[currentDayIndex]].end"
+                       [disabled]="!isEditing || room.schedule[weekDays[currentDayIndex]].isClosed"
+                       placeholder="HH:mm">
+              </div>
+            </div>
+
+            <div class="form-check">
+              <input
+                class="form-check-input"
+                type="checkbox"
+                [(ngModel)]="room.schedule[weekDays[currentDayIndex]].isClosed"
+                [disabled]="!isEditing"
+                (ngModelChange)="onToggleClosed(weekDays[currentDayIndex])">
+              <label class="form-check-label" for="{{weekDays[currentDayIndex]}}Closed">
+                Fermé
+              </label>
+            </div>
+          </div>
+
+          <button class="btn btn-sm btn-outline-secondary" (click)="nextDay()">&gt;</button>
         </div>
       </div>
 
-      <ul class="list-unstyled mb-4">
-        <li class="mb-2 d-flex align-items-center flex-wrap">
-          <i class="bi bi-box-seam me-2"></i>
-          Volume :
-          @if (!isEditing) {
-            <span class="ms-1">{{ room.volumeRoom }} m<sup>3</sup></span>
-          } @else {
-            <input
-              type="number"
-              class="form-control form-control-sm ms-2"
-              [(ngModel)]="room.volumeRoom">
-          }
-        </li>
 
-        <li class="mb-2 d-flex align-items-center flex-wrap">
-          <i class="bi bi-door-open me-2"></i>
-          Portes :
-          @if (!isEditing) {
-            <span class="ms-1">{{ room.nbDoors }}</span>
-          } @else {
-            <input
-              type="number"
-              class="form-control form-control-sm ms-2"
-              [(ngModel)]="room.nbDoors">
-          }
-        </li>
+      <!-- Côté droit : graphes -->
+      <div class="col-12 col-md-9 d-flex flex-column p-3">
+        <div class="mb-3">
+          <h2>Tableau de bord de la salle "{{r.nameRoom}}" du {{today}}</h2>
+        </div>
 
-        <li class="mb-2 d-flex align-items-center flex-wrap">
-          <i class="bi bi-grid-3x2 me-2"></i>
-          Surfaces vitrées :
-          @if (!isEditing) {
-            <span class="ms-1">{{ room.glazedSurface }} m<sup>2</sup></span>
-          } @else {
-            <input
-              type="number"
-              class="form-control form-control-sm ms-2"
-              [(ngModel)]="room.glazedSurface">
-          }
-        </li>
-
-        <li class="mb-2 d-flex align-items-center flex-wrap">
-          <i class="bi bi-house me-2"></i>
-          Murs extérieurs :
-          @if (!isEditing) {
-            <span class="ms-1">{{ room.nbExteriorWalls }}</span>
-          } @else {
-            <input
-              type="number"
-              class="form-control form-control-sm ms-2"
-              [(ngModel)]="room.nbExteriorWalls">
-          }
-        </li>
-
-        <li class="mb-2 d-flex align-items-center flex-wrap">
-          <i class="bi bi-cpu me-2"></i>
-          Ip du microcontrôleur :
-          @if (!isEditing) {
-            <span class="ms-1">{{ room.ipArduino }}</span>
-          } @else {
-            <input
-              type="number"
-              class="form-control form-control-sm ms-2"
-              [(ngModel)]="room.ipArduino">
-          }
-        </li>
-      </ul>
-
-      <div class="mb-3">
-        <label class="form-label d-flex align-items-center gap-2">
-          <i class="bi bi-thermometer-half text-danger"></i>
-          Température min : {{ room.minTemp }} °C
-        </label>
-        <input
-          type="range"
-          class="form-range"
-          min="16"
-          max="26"
-          step="1"
-          [value]="room.minTemp"
-          (input)="onMinTempChange($event)">
-      </div>
-
-      <div class="mb-3">
-        <label class="form-label d-flex align-items-center gap-2">
-          <i class="bi bi-thermometer-high text-danger"></i>
-          Température max : {{ room.maxTemp }} °C
-        </label>
-        <input
-          type="range"
-          class="form-range"
-          min="16"
-          max="26"
-          step="1"
-          [value]="room.maxTemp"
-          (input)="onMaxTempChange($event)">
-      </div>
-
-      <!-- Horaires semaine -->
-      <h5 class="mt-4">Horaires de la semaine</h5>
-      <div class="table-responsive">
-        <table class="table table-bordered table-sm w-100 mb-0">
-          <thead class="table-body">
-          <tr>
-            <th>Jour</th>
-            <th>Début</th>
-            <th>Fin</th>
-          </tr>
-          </thead>
-          <tbody>
-            @for (day of weekDays; track day) {
-              <tr>
-                <td class="text-capitalize-sm">{{ dayTranslations[day] }}</td>
-
-                <!-- Heure de début -->
-                <td>
-                  <div class="input-group input-group-sm">
-                    <input
-                      #startPicker
-                      type="text"
-                      class="form-control"
-                      [(ngModel)]="room.schedule[day].start"
-                      [disabled]="!isEditing"
-                      (ngModelChange)="checkFormat(day, 'start')">
-                    @if (isEditing && !isValidTime(room.schedule[day].start)) {
-                      <button
-                        class="btn btn-outline-secondary"
-                        type="button"
-                        (click)="validateTime(day, 'start')">
-                        ✅
-                      </button>
-                    }
-                  </div>
-                </td>
-
-                <!-- Heure de fin -->
-                <td>
-                  <div class="input-group input-group-sm">
-                    <input
-                      type="text"
-                      class="form-control"
-                      [(ngModel)]="room.schedule[day].end"
-                      [disabled]="!isEditing"
-                      (ngModelChange)="checkFormat(day, 'end')">
-                    @if (isEditing && !isValidTime(room.schedule[day].end)) {
-                      <button
-                        class="btn btn-outline-secondary"
-                        type="button"
-                        (click)="validateTime(day, 'end')">
-                          ✅
-                      </button>
-                    }
-                  </div>
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- Côté droit : graphs -->
-    <div class="col-12 col-md-9 d-flex flex-column p-3">
-      <div class="mb-3">
-        <h2>@if (room) { Tableau de bord de la salle "{{room.nameRoom}}" du {{today}}} </h2>
-      </div>
-
-      @if (room) {
         <div class="d-flex flex-column gap-4">
           <div class="w-100">
             <app-sensor-graph
-              [room]="room"
+              [room]="r"
               valueKey="valueTemp"
               color="rgba(255,99,132,1)"
               style="height:300px; width:100%;">
@@ -197,7 +170,7 @@
           </div>
           <div class="w-100">
             <app-sensor-graph
-              [room]="room"
+              [room]="r"
               valueKey="valueCO2"
               color="rgba(54,162,235,1)"
               style="height:300px; width:100%;">
@@ -205,15 +178,19 @@
           </div>
           <div class="w-100">
             <app-sensor-graph
-              [room]="room"
+              [room]="r"
               valueKey="valueHum"
               color="rgba(75,192,92,1)"
               style="height:300px; width:100%;">
             </app-sensor-graph>
           </div>
         </div>
-      }
-    </div>
+      </div>
 
+    </div>
   </div>
-</div>
+} @else {
+  <div class="text-center p-4">
+    <h1>Chargement de la salle...</h1>
+  </div>
+}

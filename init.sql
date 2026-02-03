@@ -17,22 +17,32 @@ CREATE TABLE rooms (
                      nb_exterior_walls INT,
                      min_temp DECIMAL(15,2),
                      max_temp DECIMAL(15,2),
+
                      monday_start TIME,
                      monday_end TIME,
+                     monday_closed BOOLEAN DEFAULT FALSE,
                      tuesday_start TIME,
                      tuesday_end TIME,
+                     tuesday_closed BOOLEAN DEFAULT FALSE,
                      wednesday_start TIME,
                      wednesday_end TIME,
+                     wednesday_closed BOOLEAN DEFAULT FALSE,
                      thursday_start TIME,
                      thursday_end TIME,
+                     thursday_closed BOOLEAN DEFAULT FALSE,
                      friday_start TIME,
                      friday_end TIME,
+                     friday_closed BOOLEAN DEFAULT FALSE,
                      saturday_start TIME,
                      saturday_end TIME,
+                     saturday_closed BOOLEAN DEFAULT TRUE,
                      sunday_start TIME,
                      sunday_end TIME,
+                     sunday_closed BOOLEAN DEFAULT TRUE,
+
                      is_exists BOOLEAN DEFAULT TRUE
 );
+
 
 CREATE TABLE data (
                     id_data SERIAL PRIMARY KEY,

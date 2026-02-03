@@ -21,27 +21,19 @@ export interface LoginResponse {
   };
 }
 
-// =====================
-// ROOM TYPES
-// =====================
 export interface Rooms {
   idRoom: string;
   nameRoom: string;
-  ipArduino: string | null;
-  volumeRoom: number | null;
-  glazedSurface: number | null;
-  nbDoors: number | null;
-  nbExteriorWalls: number | null;
-  minTemp: number | null;
-  maxTemp: number | null;
+  ipArduino: string;
+  volumeRoom: number;
+  glazedSurface: number;
+  nbDoors: number;
+  nbExteriorWalls: number;
+  minTemp: number;
+  maxTemp: number;
   isExists: boolean;
 }
 
-// =====================
-// SCHEDULE TYPES
-// =====================
-
-// Days of week strict typing
 export type WeekDay =
   | 'monday'
   | 'tuesday'
@@ -52,28 +44,27 @@ export type WeekDay =
   | 'sunday';
 
 export interface DaySchedule {
-  start: string; // ex: "08:00"
-  end: string;   // ex: "18:00"
+  start: string | null;
+  end: string | null;
+  isClosed: boolean;
 }
 
-// Weekly schedule map type
 export type WeeklySchedule = Record<WeekDay, DaySchedule>;
 
-// Room including schedule
 export interface RoomWithSchedule extends Rooms {
   schedule: WeeklySchedule;
 }
 
 export interface CreateRoomRequest {
   nameRoom: string;
-  ipArduino?: string;
-  volumeRoom?: number;
-  glazedSurface?: number;
-  nbDoors?: number;
-  nbExteriorWalls?: number;
-  minTemp?: number;
-  maxTemp?: number;
-  schedule?: Partial<WeeklySchedule>;
+  ipArduino: string;
+  volumeRoom: number;
+  glazedSurface: number;
+  nbDoors: number;
+  nbExteriorWalls: number;
+  minTemp: number;
+  maxTemp: number;
+  schedule: WeeklySchedule;
   isExists: boolean;
 }
 
@@ -81,9 +72,6 @@ export interface UpdateRoomRequest extends Partial<CreateRoomRequest> {
   idRoom: string;
 }
 
-// =====================
-// MEASUREMENTS TYPES
-// =====================
 export interface MeasurementData {
   idData: number;
   timestamp: Date;
@@ -103,9 +91,6 @@ export interface ArduinoPublishRequest {
   idRoom: string;
 }
 
-// =====================
-// ARDUINO CONFIG TYPES
-// =====================
 export interface ArduinoTempConfig {
   minTemp: number;
   maxTemp: number;
@@ -119,18 +104,12 @@ export interface ArduinoHoursConfig {
   }[];
 }
 
-// =====================
-// JWT PAYLOAD
-// =====================
 export interface JWTPayload {
   id: number;
   username: string;
   role: string;
 }
 
-// =====================
-// FASTIFY JWT MODULE AUGMENTATION
-// =====================
 declare module '@fastify/jwt' {
   interface FastifyJWT {
     payload: JWTPayload;

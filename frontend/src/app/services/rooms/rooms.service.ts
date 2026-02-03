@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Room } from '../../models/room';
-import {BehaviorSubject, Observable, of, tap} from 'rxjs';
+import { BehaviorSubject, map, Observable, of, tap } from 'rxjs';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { AuthServices } from '../auth/auth.services';
 
@@ -9,7 +9,6 @@ import { AuthServices } from '../auth/auth.services';
 })
 export class RoomsServices {
   private apiUrl = 'http://localhost:3000/api/rooms';
-
   private roomsSubject = new BehaviorSubject<Room[]>([]);
   rooms$ = this.roomsSubject.asObservable();
 
@@ -17,61 +16,105 @@ export class RoomsServices {
     private http: HttpClient,
     private authServices: AuthServices
   ) {
-    // ⚡ Charger automatiquement les salles si l'utilisateur est connecté au démarrage
     if (this.authServices.isLoggedIn()) {
       this.loadRooms();
     }
   }
 
-  loadRooms() {
-    const { headers } = this.getAuthHeaders();
-    this.http.get<{ message: string; error: boolean; data: Room[] }>(this.apiUrl, { headers })
-      .subscribe(res => {
-        if (!res.error) {
-          this.roomsSubject.next(res.data);
-        }
-      });
-  }
-
+  /* =======================
+     🔐 HEADERS
+  ======================= */
   private getAuthHeaders() {
     const token = this.authServices.getToken();
     return {
-      headers: new HttpHeaders({
-        Authorization: `Bearer ${token || ''}`
-      })
+      headers: new HttpHeaders({Authorization: `Bearer ${token || ''}`})
+    };
+  }
+
+  /* =======================
+     📥 LOAD ALL ROOMS
+  ======================= */
+  loadRooms() {
+    this.http
+      .get<{ message: string; error: boolean; data: Room[] }>(
+        this.apiUrl,
+        this.getAuthHeaders()
+      )
+      .pipe(
+        map(res =>
+          res.error
+            ? []
+            : res.data.sort((a, b) => a.nameRoom.localeCompare(b.nameRoom))
+        )
+      )
+      .subscribe(rooms => {
+        this.roomsSubject.next(rooms);
+      });
+  }
+
+  private defaultSchedule() {
+    return {
+      monday: {start: '08:00', end: '18:00', isClosed: false},
+      tuesday: {start: '08:00', end: '18:00', isClosed: false},
+      wednesday: {start: '08:00', end: '18:00', isClosed: false},
+      thursday: {start: '08:00', end: '18:00', isClosed: false},
+      friday: {start: '08:00', end: '18:00', isClosed: false},
+      saturday: {start: null, end: null, isClosed: true},
+      sunday: {start: null, end: null, isClosed: true},
     };
   }
 
   createRoom(room: Partial<Room>) {
     const payload = {
       ...room,
-      isExists: true,
       schedule: room.schedule || this.defaultSchedule()
     };
-    return this.http.put<{ message: string; error: boolean; data: Room }>(this.apiUrl, payload, this.getAuthHeaders())
+
+    return this.http
+      .put<{ message: string; error: boolean; data: Room }>(
+        this.apiUrl,
+        payload,
+        this.getAuthHeaders()
+      )
       .pipe(
         tap(res => {
           if (!res.error && res.data) {
             const current = this.roomsSubject.getValue();
-            this.roomsSubject.next([...current, res.data]);
+            this.roomsSubject.next(
+              [...current, res.data].sort((a, b) =>
+                a.nameRoom.localeCompare(b.nameRoom)
+              )
+            );
           }
         })
       );
   }
 
-  private defaultSchedule() {
-    return {
-      monday: { start: '08:00', end: '18:00' },
-      tuesday: { start: '08:00', end: '18:00' },
-      wednesday: { start: '08:00', end: '18:00' },
-      thursday: { start: '08:00', end: '18:00' },
-      friday: { start: '08:00', end: '18:00' },
-      saturday: { start: '08:00', end: '18:00' },
-      sunday: { start: '08:00', end: '18:00' },
-    };
+  /* =======================
+     🗑 DELETE ROOM
+  ======================= */
+  deleteRoom(id: string) {
+    return this.http
+      .request<{ message: string; error: boolean }>('delete', this.apiUrl, {
+        ...this.getAuthHeaders(),
+        body: {idRoom: id}
+      })
+      .pipe(
+        tap(res => {
+          if (!res.error) {
+            const filtered = this.roomsSubject
+              .getValue()
+              .filter(r => r.idRoom !== id);
+            this.roomsSubject.next(filtered);
+          }
+        })
+      );
   }
 
-  updateRoom(room: Partial<Room> & { idRoom: string }): Observable<{ message: string; error: boolean; data: Room }> {
+  /* =======================
+     ✏️ UPDATE ROOM
+  ======================= */
+  updateRoom(room: Partial<Room> & { idRoom: string }) {
     return this.http.patch<{ message: string; error: boolean; data: Room }>(
       this.apiUrl,
       room,
@@ -79,17 +122,31 @@ export class RoomsServices {
     );
   }
 
-  deleteRoom(id: string): Observable<{ message: string; error: boolean }> {
-    return this.http.request<{ message: string; error: boolean }>('delete', this.apiUrl, {
-      ...this.getAuthHeaders(),
-      body: { idRoom: id }
-    });
-  }
+  /* =======================
+     🔍 GET ROOM BY ID (CACHE + API)
+  ======================= */
 
-  getRoomById(id: string): Observable<{ message: string; error: boolean; data: Room }> {
-    return this.http.get<{ message: string; error: boolean; data: Room }>(
-      `${this.apiUrl}/${id}`,
-      this.getAuthHeaders()
-    );
+  // rooms.service.ts
+  getRoomById(id: string): Observable<{ message: string; error: boolean; data?: Room }> {
+    const cached = this.roomsSubject
+      .getValue()
+      .find(r => r.idRoom === id);
+
+    if (cached) {
+      return of({message: 'Salle récupérée depuis le cache', error: false, data: cached});
+    }
+
+    return this.http
+      .get<{ message: string; error: boolean; data: Room }>(
+        `${this.apiUrl}/${id}`,
+        this.getAuthHeaders()
+      )
+      .pipe(
+        tap(res => {
+          if (!res.error && res.data) {
+            this.roomsSubject.next([...this.roomsSubject.getValue(), res.data]);
+          }
+        })
+      );
   }
 }

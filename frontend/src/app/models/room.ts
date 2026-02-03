@@ -1,6 +1,8 @@
 export interface DaySchedule {
-  start: string; // ex: "08:00"
-  end: string;   // ex: "18:00"
+  start: string | null;
+  end: string | null;
+
+  isClosed: boolean;
 }
 export class Room {
   constructor(
