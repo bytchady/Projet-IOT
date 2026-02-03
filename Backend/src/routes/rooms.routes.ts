@@ -35,9 +35,9 @@ export async function roomsRoutes(fastify: FastifyInstance): Promise<void> {
   )
 
   // DELETE /api/rooms
-  fastify.delete<{ Body: { idRoom: string } }>(
-    '/rooms',
+  fastify.delete<{ Params: { id: string }, Body: UpdateRoomRequest }>(
+    '/rooms/:id',
     { preHandler: [authMiddleware()] },
     roomsController.deleteRoom.bind(roomsController)
-  );
+  )
 }

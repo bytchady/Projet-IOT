@@ -141,7 +141,7 @@ export class RoomsController {
     request: FastifyRequest<{ Params: { id: string }, Body: UpdateRoomRequest }>,
     reply: FastifyReply
   ) {
-    const roomId = request.params.id;  // ⬅️ Récupération de l'ID depuis l'URL
+    const roomId = request.params.id;
     const roomData = request.body;
 
     if (!roomId?.trim()) {
@@ -178,15 +178,15 @@ export class RoomsController {
     }
   }
 
-  async deleteRoom(request: FastifyRequest<{ Body: { idRoom: string } }>, reply: FastifyReply) {
-    const { idRoom } = request.body;
+  async deleteRoom(request: FastifyRequest<{ Params: { id: string }}>, reply: FastifyReply) {
+    const roomId = request.params.id;
 
-    if (!idRoom?.trim()) {
+    if (!roomId?.trim()) {
       throw new BadRequestError("L'identifiant de la salle est requis");
     }
 
     try {
-      const deleted = await this.roomsService.deleteRoom(idRoom);
+      const deleted = await this.roomsService.deleteRoom(roomId);
       if (!deleted) {
         throw new NotFoundError("Salle introuvable");
       }
