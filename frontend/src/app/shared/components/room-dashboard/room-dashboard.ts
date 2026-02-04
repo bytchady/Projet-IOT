@@ -25,7 +25,7 @@ export class RoomDashboard implements OnInit {
   @ViewChild('humGraph') humGraph?: SensorGraph;
 
   room: Room | null = null;
-  isLoading: boolean = true;  // ⬅️ AJOUT
+  isLoading: boolean = true;
   isEditing = false;
   today = '';
   currentDayIndex = 0;
@@ -55,7 +55,7 @@ export class RoomDashboard implements OnInit {
     private router: Router,
     private roomsService: RoomsServices,
     private serverMessageService: ServerMessagesServices,
-    private cdr: ChangeDetectorRef  // ⬅️ AJOUT
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -66,25 +66,25 @@ export class RoomDashboard implements OnInit {
     }
 
     this.today = new Date().toLocaleDateString('fr-FR');
-    this.isLoading = true;  // ⬅️ AJOUT
+    this.isLoading = true;
 
     this.roomsService.getRoomById(id).subscribe({
       next: (room) => {
         if (!room) {
           this.serverMessageService.showMessage('Salle introuvable', true);
-          this.isLoading = false;  // ⬅️ AJOUT
-          this.cdr.detectChanges();  // ⬅️ AJOUT
+          this.isLoading = false;
+          this.cdr.detectChanges();
           this.router.navigate(['/']);
           return;
         }
         this.room = room;
-        this.isLoading = false;  // ⬅️ AJOUT
-        this.cdr.detectChanges();  // ⬅️ AJOUT
+        this.isLoading = false;
+        this.cdr.detectChanges();
       },
       error: () => {
         this.serverMessageService.showMessage('Erreur serveur', true);
-        this.isLoading = false;  // ⬅️ AJOUT
-        this.cdr.detectChanges();  // ⬅️ AJOUT
+        this.isLoading = false;
+        this.cdr.detectChanges();
         this.router.navigate(['/']);
       },
     });

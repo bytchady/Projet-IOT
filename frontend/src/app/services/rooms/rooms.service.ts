@@ -19,7 +19,7 @@ export class RoomsServices {
   ) {}
 
   private getAuthHeaders() {
-    const token = this.authServices.getToken(); // récupère le JWT
+    const token = this.authServices.getToken();
     return { Authorization: `Bearer ${token}` };
   }
 
@@ -75,7 +75,7 @@ export class RoomsServices {
     }).pipe(
       map(res => {
         this.serverMessageService.showMessage(res.message, res.error);
-        return res.data;  // ⬅️ Extraire la room de "data"
+        return res.data;
       }),
       tap(updatedRoom => {
         const current = this.rooms.getValue();
