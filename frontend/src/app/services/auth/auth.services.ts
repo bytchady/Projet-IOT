@@ -1,21 +1,21 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import {HttpClient} from '@angular/common/http';
+import {Observable} from 'rxjs';
 
 @Injectable({
   providedIn: 'root',
 })
 export class AuthServices {
-  private apiUrl = 'http://localhost:3000/api';
+  private apiUrl = '/api/login';
 
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+  ) {}
 
-  // LOGIN
   login(username: string, password: string): Observable<any> {
-    return this.http.post(`${this.apiUrl}/login`, { username, password });
+    return this.http.post(this.apiUrl, { username, password });
   }
 
-  // TOKEN MANAGEMENT
   setToken(token: string) {
     localStorage.setItem('token', token);
   }
@@ -29,6 +29,7 @@ export class AuthServices {
   }
 
   isLoggedIn(): boolean {
-    return !!this.getToken();
+    const token = this.getToken();
+    return !!token;
   }
 }

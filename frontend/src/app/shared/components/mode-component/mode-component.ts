@@ -1,4 +1,6 @@
 import { Component, OnInit } from '@angular/core';
+import {ModeServices} from '../../../services/mode/mode.services';
+import {Subscription} from 'rxjs';
 
 @Component({
   selector: 'app-mode-component',
@@ -6,26 +8,20 @@ import { Component, OnInit } from '@angular/core';
   templateUrl: './mode-component.html',
 })
 export class ModeComponent implements OnInit {
-
   isDarkMode = false;
+  private subscription!: Subscription;
+
+  constructor(private modeServices: ModeServices) {}
 
   ngOnInit(): void {
-    this.isDarkMode =
-      document.documentElement.getAttribute('data-bs-theme') === 'dark'
-      || window.matchMedia('(prefers-color-scheme: dark)').matches;
-
-    this.applyTheme();
+    this.isDarkMode = this.modeServices.isDarkMode;
+    this.subscription = this.modeServices.isDarkMode$.subscribe(mode => {
+      this.isDarkMode = mode;
+    });
   }
 
   toggleTheme() {
-    this.isDarkMode = !this.isDarkMode;
-    this.applyTheme();
-  }
-
-  applyTheme() {
-    document.documentElement.setAttribute(
-      'data-bs-theme',
-      this.isDarkMode ? 'dark' : 'light'
-    );
+    this.modeServices.toggleTheme();
+    this.isDarkMode = this.modeServices.isDarkMode;
   }
 }

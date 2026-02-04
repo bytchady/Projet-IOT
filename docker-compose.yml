@@ -15,6 +15,7 @@ services:
 
   db:
     image: postgres:16-alpine
+    container_name: iot-db-1
     environment:
       POSTGRES_DB: thermocesi
       POSTGRES_USER: thermocesi
@@ -30,13 +31,15 @@ services:
       timeout: 5s
       retries: 5
 
-#  frontend:
-#    build: ./frontend
-#    container_name: frontend
-#    ports:
-#      - "4200:80"
-#    depends_on:
-#      - backend
-
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - db
 volumes:
   postgres_data:

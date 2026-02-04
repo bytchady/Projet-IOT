@@ -1,32 +1,29 @@
 export interface DaySchedule {
-  start: string; // ex: "08:00"
-  end: string;   // ex: "18:00"
+  start: string | null;
+  end: string | null;
+  isClosed: boolean;
 }
-export class Room {
+
+export type WeekDay =
+  | 'monday'
+  | 'tuesday'
+  | 'wednesday'
+  | 'thursday'
+  | 'friday'
+  | 'saturday'
+  | 'sunday';
+
+export interface Room {
   idRoom: string;
-
-  constructor(
-    public ipArduino: string,
-    public nameRoom: string,
-    public volumeRoom: number,
-    public glazedSurface: number,
-    public nbDoors: number,
-    public nbExteriorWalls: number,
-    public minTemp: number,
-    public maxTemp: number,
-
-    public schedule: {
-      monday: DaySchedule;
-      tuesday: DaySchedule;
-      wednesday: DaySchedule;
-      thursday: DaySchedule;
-      friday: DaySchedule;
-      saturday: DaySchedule;
-      sunday: DaySchedule;
-    },
-
-    public isExists: boolean
-  ) {
-    this.idRoom = crypto.randomUUID().substring(0, 8);
-  }
+  nameRoom: string;
+  ipArduino: string;
+  volumeRoom: number;
+  glazedSurface: number;
+  nbDoors: number;
+  nbExteriorWalls: number;
+  minTemp: number;
+  maxTemp: number;
+  isExists: boolean;
+  schedule: Record<WeekDay, DaySchedule>;
 }
+

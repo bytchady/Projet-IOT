@@ -10,6 +10,5 @@ export const publicGuard: CanActivateFn = () => {
     router.navigate(['/']);
     return false;
   }
-
   return true;
 };
