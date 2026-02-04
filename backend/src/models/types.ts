@@ -82,14 +82,15 @@ export interface MeasurementData {
   idRoom: string;
 }
 
-export interface ArduinoPublishRequest {
-  timestamp: Date;
+export interface ArduinoMeasurement {
+  timestamp: string;
   valueCO2?: number;
   valueTemp?: number;
   valueHum?: number;
   climStatus?: boolean;
-  idRoom: string;
 }
+
+export type ArduinoPublishRequest = ArduinoMeasurement[];
 
 export interface ArduinoTempConfig {
   minTemp: number;
