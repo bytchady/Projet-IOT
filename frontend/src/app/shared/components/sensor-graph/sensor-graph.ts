@@ -77,10 +77,14 @@ export class SensorGraph implements OnChanges {
       if (value === null || value === undefined) return;
 
       const timestamp = new Date(m.timestamp);
-      const hours = timestamp.getUTCHours();    // <-- UTC
-      const minutes = timestamp.getUTCMinutes(); // <-- UTC
+      const hours = timestamp.getHours();
+      const minutes = timestamp.getMinutes();
 
-      const label = `${hours.toString().padStart(2,'0')}:${minutes.toString().padStart(2,'0')}`;
+      const label = timestamp.toLocaleTimeString('fr-FR', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      });
       chartLabels.push(label);
       chartValues.push(Number(value));
     });
