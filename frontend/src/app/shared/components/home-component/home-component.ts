@@ -5,12 +5,14 @@ import { FormsModule } from '@angular/forms';
 import { Room } from '../../../models/room';
 import { RoomsServices } from '../../../services/rooms/rooms.service';
 import { ServerMessagesServices } from '../../../services/server-messages/server-messages.services';
-import { RouterLink } from '@angular/router';
-import { AuthServices } from '../../../services/auth/auth.services';
+
 
 @Component({
   selector: 'app-home-component',
-  imports: [SearchBar, RoomCard, FormsModule, RouterLink],
+  imports: [
+    SearchBar,
+    RoomCard,
+    FormsModule],
   templateUrl: './home-component.html',
   styleUrls: ['./home-component.scss'],
 })
@@ -73,7 +75,7 @@ export class HomeComponent implements OnInit {
 
     const payload: Partial<Room> = {
       nameRoom: roomName,
-      ipArduino: '0.0.0.0',
+      ipArduino: '',
       volumeRoom: 0,
       glazedSurface: 0,
       nbDoors: 0,

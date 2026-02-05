@@ -67,10 +67,10 @@ export class ArduinoClientService {
       // Format schedules for Arduino
       const hoursPayload: Record<string, { start: string; end: string }> = {};
       for (const schedule of config.schedules) {
-        const dayKey = schedule.day_of_week.toLowerCase();
+        const dayKey = schedule.dayOfWeek.toLowerCase();
         hoursPayload[dayKey] = {
-          start: schedule.start_time,
-          end: schedule.end_time
+          start: schedule.startTime,
+          end: schedule.endTime
         };
       }
 

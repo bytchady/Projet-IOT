@@ -1,106 +1,115 @@
-<div class="container-fluid min-vh-100 d-flex flex-column p-0">
+<!--<div class="container-fluid min-vh-100 d-flex flex-column p-0">-->
 
-  <app-header></app-header>
+<!--  <app-header></app-header>-->
 
-  <div class="d-flex flex-column flex-md-row p-0">
+<!--  <div class="d-flex flex-column flex-md-row p-0">-->
 
-    <!-- Côté gauche : sélection date + top 3 -->
-    <div class="col-12 col-md-3 d-flex flex-column p-4 bg-body text-body">
-      <h4>Rapport thermique</h4>
+<!--    &lt;!&ndash; Côté gauche : sélection date + top 3 &ndash;&gt;-->
+<!--    <div class="col-12 col-md-3 d-flex flex-column p-4 bg-body text-body">-->
+<!--      <h4>Rapport thermique</h4>-->
 
-      <!-- Date début / fin -->
-      <div class="mb-4">
-        <div class="mb-3">
-          <label class="form-label">Date début</label>
-          <input type="date"
-                 class="form-control"
-                 [(ngModel)]="startDate"
-                 (change)="onStartDateChange()"
-                 [max]="endDate">
-        </div>
-        <div class="mb-3">
-          <label class="form-label">Date fin</label>
-          <input type="date"
-                 class="form-control"
-                 [(ngModel)]="endDate"
-                 (change)="onEndDateChange()"
-                 [min]="startDate">
-        </div>
-      </div>
+<!--      &lt;!&ndash; Date début / fin &ndash;&gt;-->
+<!--      <div class="mb-4">-->
+<!--        <div class="mb-3">-->
+<!--          <label class="form-label">Date début</label>-->
+<!--          <input type="date"-->
+<!--                 class="form-control"-->
+<!--                 [(ngModel)]="startDate"-->
+<!--                 (change)="onStartDateChange()"-->
+<!--                 [max]="endDate">-->
+<!--        </div>-->
+<!--        <div class="mb-3">-->
+<!--          <label class="form-label">Date fin</label>-->
+<!--          <input type="date"-->
+<!--                 class="form-control"-->
+<!--                 [(ngModel)]="endDate"-->
+<!--                 (change)="onEndDateChange()"-->
+<!--                 [min]="startDate">-->
+<!--        </div>-->
+<!--      </div>-->
 
-      <!-- Top 3 salles - Podium -->
-      <div>
-        <h5 class="mb-3">Top 3 déperditions</h5>
-        <div class="d-flex justify-content-center align-items-end gap-3 mt-4">
-          @for (top of topRooms; track top.room.idRoom; let i = $index) {
-            <div class="text-center">
-              <!-- Badge classement -->
-              <div class="mb-2 fw-bold">
-                @if (i === 0) { 🥇 1er }
-                @else if (i === 1) { 🥈 2e }
-                @else { 🥉 3e }
-              </div>
+<!--      &lt;!&ndash; Top 3 salles - Podium &ndash;&gt;-->
+<!--      <div>-->
+<!--        <h5 class="mb-3">Top 3 déperditions</h5>-->
+<!--        <div class="d-flex justify-content-center align-items-end gap-3 mt-4">-->
+<!--          @for (top of topRooms; track top.room.idRoom; let i = $index) {-->
+<!--            <div class="text-center">-->
+<!--              &lt;!&ndash; Badge classement &ndash;&gt;-->
+<!--              <div class="mb-2 fw-bold">-->
+<!--                @if (i === 0) { 🥇 1er }-->
+<!--                @else if (i === 1) { 🥈 2e }-->
+<!--                @else { 🥉 3e }-->
+<!--              </div>-->
 
-              <!-- Bloc podium -->
-              <div class="podium-box shadow rounded d-flex flex-column justify-content-center px-3"
-                   [class.first]="i === 0"
-                   [class.second]="i === 1"
-                   [class.third]="i === 2">
-                <strong>{{ top.room.nameRoom }}</strong>
-                <span class="badge bg-danger mt-1">
-                  {{ top.loss | number:'1.0-0' }}
-                </span>
-              </div>
-            </div>
-          }
-        </div>
-      </div>
+<!--              &lt;!&ndash; Bloc podium &ndash;&gt;-->
+<!--              <div class="podium-box shadow rounded d-flex flex-column justify-content-center px-3"-->
+<!--                   [class.first]="i === 0"-->
+<!--                   [class.second]="i === 1"-->
+<!--                   [class.third]="i === 2">-->
+<!--                <strong>{{ top.room.nameRoom }}</strong>-->
+<!--                <span class="badge bg-danger mt-1">-->
+<!--                  {{ top.loss | number:'1.0-0' }}-->
+<!--                </span>-->
+<!--              </div>-->
+<!--            </div>-->
+<!--          }-->
+<!--        </div>-->
+<!--      </div>-->
 
-    </div>
+<!--    </div>-->
 
-    <!-- Côté droit : graphiques des 3 salles -->
-    <div class="col-12 col-md-9 d-flex flex-column p-4">
-      @for (top of topRooms; track top.room.idRoom) {
-        <div class="card p-3 mb-3">
-          <h5>{{ top.room.nameRoom }} – Déperdition: {{ top.loss | number:'1.0-0' }}</h5>
+<!--    &lt;!&ndash; Côté droit : graphiques des 3 salles &ndash;&gt;-->
+<!--    <div class="col-12 col-md-9 d-flex flex-column p-4">-->
+<!--      @if (isLoading) {-->
+<!--        <div class="text-center py-5">-->
+<!--          <div class="spinner-border text-primary" role="status">-->
+<!--            <span class="visually-hidden">Chargement...</span>-->
+<!--          </div>-->
+<!--        </div>-->
+<!--      } @else {-->
+<!--        @for (top of topRooms; track top.room.idRoom) {-->
+<!--          <div class="card p-3 mb-3">-->
+<!--            <h5>{{ top.room.nameRoom }} – Déperdition: {{ top.loss | number:'1.0-0' }}</h5>-->
+<!--            <div class="d-flex flex-column gap-3">-->
+<!--              &lt;!&ndash; Graph Température &ndash;&gt;-->
+<!--              <app-sensor-graph-->
+<!--                [room]="top.room"-->
+<!--                valueKey="valueTemp"-->
+<!--                [startDate]="startDate"-->
+<!--                [endDate]="endDate"-->
+<!--                [dashboardMode]="false"-->
+<!--                [color]="getSensorColor('Temperature')"-->
+<!--                style="height:300px; width:100%;">-->
+<!--              </app-sensor-graph>-->
 
-          <div class="d-flex flex-column gap-3">
+<!--              &lt;!&ndash; Graph CO2 &ndash;&gt;-->
+<!--              <app-sensor-graph-->
+<!--                [room]="top.room"-->
+<!--                valueKey="valueCO2"-->
+<!--                [startDate]="startDate"-->
+<!--                [endDate]="endDate"-->
+<!--                [dashboardMode]="false"-->
+<!--                [color]="getSensorColor('CO2')"-->
+<!--                style="height:300px; width:100%;">-->
+<!--              </app-sensor-graph>-->
 
-            <!-- Graph Température -->
-            <app-sensor-graph
-              [room]="top.room"
-              valueKey="valueTemp"
-              [hours]="24"
-              [color]="getSensorColor('Temperature')"
-              style="height:300px; width:100%;">
-            </app-sensor-graph>
+<!--              &lt;!&ndash; Graph Humidité &ndash;&gt;-->
+<!--              <app-sensor-graph-->
+<!--                [room]="top.room"-->
+<!--                valueKey="valueHum"-->
+<!--                [startDate]="startDate"-->
+<!--                [endDate]="endDate"-->
+<!--                [dashboardMode]="false"-->
+<!--                [color]="getSensorColor('Humidity')"-->
+<!--                style="height:300px; width:100%;">-->
+<!--              </app-sensor-graph>-->
+<!--            </div>-->
+<!--          </div>-->
+<!--        }-->
+<!--      }-->
+<!--    </div>-->
+<!--  </div>-->
 
-            <!-- Graph CO2 -->
-            <app-sensor-graph
-              [room]="top.room"
-              valueKey="valueCO2"
-              [hours]="24"
-              [color]="getSensorColor('CO2')"
-              style="height:300px; width:100%;">
-            </app-sensor-graph>
+<!--  <app-footer></app-footer>-->
 
-            <!-- Graph Humidité -->
-            <app-sensor-graph
-              [room]="top.room"
-              valueKey="valueHum"
-              [hours]="24"
-              [color]="getSensorColor('Humidity')"
-              style="height:300px; width:100%;">
-            </app-sensor-graph>
-
-          </div>
-        </div>
-      }
-
-    </div>
-
-  </div>
-
-  <app-footer></app-footer>
-
-</div>
+<!--</div>-->

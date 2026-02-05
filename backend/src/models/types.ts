@@ -4,7 +4,7 @@ export interface Users {
   passwordHash: string;
   email: string | null;
   role: 'admin' | 'user';
-  created_at: Date;
+  createdAt: Date;
 }
 
 export interface LoginRequest {
@@ -68,22 +68,20 @@ export interface CreateRoomRequest {
   isExists: boolean;
 }
 
-export interface UpdateRoomRequest extends Partial<CreateRoomRequest> {
-  idRoom: string;
-}
+export interface UpdateRoomRequest extends Partial<CreateRoomRequest> {}
 
 export interface MeasurementData {
   idData: number;
   timestamp: Date;
   valueCO2: number | null;
   valueTemp: number | null;
-  valueHum?: number | null;
+  valueHum: number | null;
   climStatus: boolean | null;
   idRoom: string;
 }
 
 export interface ArduinoPublishRequest {
-  timestamp: Date;
+  timestamp?: Date;
   valueCO2?: number;
   valueTemp?: number;
   valueHum?: number;
@@ -98,9 +96,9 @@ export interface ArduinoTempConfig {
 
 export interface ArduinoHoursConfig {
   schedules: {
-    day_of_week: WeekDay;
-    start_time: string;
-    end_time: string;
+    dayOfWeek: WeekDay;
+    startTime: string;
+    endTime: string;
   }[];
 }
 

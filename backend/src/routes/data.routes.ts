@@ -1,34 +1,33 @@
-import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import { FastifyInstance } from 'fastify';
 import { DataController } from '../controllers/data.controller.js';
 import { authMiddleware } from '../middleware/auth.middleware.js';
 
 export async function dataRoutes(fastify: FastifyInstance): Promise<void> {
   const dataController = new DataController();
 
-  // GET /api/room/:id/dataset/:heure - Get measurements for a room by hour
-  fastify.get<{ Params: { id: string; heure: string } }>(
-    '/room/:id/data/:heure',
+  // GET /api/data/:roomId/today - Données d'aujourd'hui (pour room-dashboard)
+  fastify.get<{ Params: { roomId: string } }>(
+    '/data/:roomId/today',
     { preHandler: [authMiddleware()] },
-    async (request: FastifyRequest<{ Params: { id: string; heure: string } }>, reply: FastifyReply) => {
-      return dataController.getDataByHour(request, reply);
-    }
+    dataController.getDataForToday.bind(dataController)
   );
 
-  // GET /api/room/:id/dataset - Get all recent measurements for a room
-  fastify.get<{ Params: { id: string }; Querystring: { limit?: string } }>(
-    '/room/:id/data',
+  // GET /api/data/:roomId/range - Données par plage de dates (pour rapport)
+  fastify.get<{
+    Params: { roomId: string };
+    Querystring: { startDate: string; endDate: string };
+  }>(
+    '/data/:roomId/range',
     { preHandler: [authMiddleware()] },
-    async (request: FastifyRequest<{ Params: { id: string }; Querystring: { limit?: string } }>, reply: FastifyReply) => {
-      return dataController.getAllData(request, reply);
-    }
+    dataController.getDataByDateRange.bind(dataController)
   );
 
-  // GET /api/room/:id/latest - Get latest measurement for a room
-  fastify.get<{ Params: { id: string } }>(
-    '/room/:id/latest',
+  // GET /api/data/rooms - Données pour plusieurs salles (pour rapport top 3)
+  fastify.get<{
+    Querystring: { roomIds: string; startDate: string; endDate: string };
+  }>(
+    '/data/rooms',
     { preHandler: [authMiddleware()] },
-    async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
-      return dataController.getLatestData(request, reply);
-    }
+    dataController.getDataForMultipleRooms.bind(dataController)
   );
 }

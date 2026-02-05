@@ -1,64 +1,125 @@
 import { Injectable } from '@angular/core';
 import { Observable, of } from 'rxjs';
-import { Room } from '../../models/room';
-import { Data } from '../../models/data';
+import { map, catchError } from 'rxjs/operators';
 import { HttpClient, HttpParams } from '@angular/common/http';
+import { Data } from '../../models/data';
+import { Room } from '../../models/room';
+import { AuthServices } from '../auth/auth.services';
+import { ServerMessagesServices } from '../server-messages/server-messages.services';
+
+interface ApiResponse<T> {
+  message: string;
+  error: boolean;
+  data: T;
+}
 
 @Injectable({
   providedIn: 'root'
 })
 export class DataServices {
-  constructor(private http: HttpClient) {}
+  private apiUrl = '/api/data';
+
+  constructor(
+    private http: HttpClient,
+    private authServices: AuthServices,
+    private serverMessageService: ServerMessagesServices
+  ) {}
+
+  private getAuthHeaders() {
+    const token = this.authServices.getToken();
+    return { Authorization: `Bearer ${token}` };
+  }
 
   /**
-   * Retourne les mesures d'une salle selon le nombre d'heures et le type de période
-   * @param room La salle
-   * @param hours Nombre d'heures à simuler (pour test)
-   * @param period day | week | month | year
-   * @param date Jour de référence pour récupérer les données
+   * Récupère les données d'aujourd'hui (pour room-dashboard)
    */
-  getMeasuresByRoom(
-    room: Room,
-    hours: number = 24,
-    period: 'day' | 'week' | 'month' | 'year' = 'day',
-    date: Date = new Date()
-  ): Observable<Data[]> { // <-- retourne Data[], pas Dataset[]
+  getTodayMeasures(roomId: string): Observable<Data[]> {
+    return this.http.get<ApiResponse<any[]>>(
+      `${this.apiUrl}/${roomId}/today`,
+      { headers: this.getAuthHeaders() }
+    ).pipe(
+      map(response => {
+        if (response.error || !response.data) {
+          return [];
+        }
+        return response.data.map(item => this.mapToData(item));
+      }),
+      catchError(err => {
+        console.error('Erreur getTodayMeasures:', err);
+        return of([]);
+      })
+    );
+  }
 
-    // TODO: remplacer cette partie par l'appel backend
-    // Exemple API: GET /api/room/:id/dataset/:period?date=YYYY-MM-DD
-    // const params = new HttpParams().set('date', date.toISOString());
-    // return this.http.get<Data[]>(`/api/room/${room.idRoom}/dataset/${period}`, { params });
+  /**
+   * Récupère les données par plage de dates (pour rapport)
+   */
+  getDataByDateRange(roomId: string, startDate: Date, endDate: Date): Observable<Data[]> {
+    const params = new HttpParams()
+      .set('startDate', startDate.toISOString().split('T')[0])
+      .set('endDate', endDate.toISOString().split('T')[0]);
 
-    // === SIMULATION POUR TEST ===
-    const data: Data[] = [];
-    const start = new Date(date);
-    start.setHours(0, 0, 0, 0); // début de la journée
-    let id = 1;
+    return this.http.get<ApiResponse<any[]>>(
+      `${this.apiUrl}/${roomId}/range`,
+      { headers: this.getAuthHeaders(), params }
+    ).pipe(
+      map(response => {
+        if (response.error || !response.data) {
+          return [];
+        }
+        return response.data.map(item => this.mapToData(item));
+      }),
+      catchError(err => {
+        console.error('Erreur getDataByDateRange:', err);
+        return of([]);
+      })
+    );
+  }
 
-    // Intervalle 1 minute par défaut
-    const intervalMinutes = 1;
+  /**
+   * Récupère les données pour plusieurs salles (pour rapport top 3)
+   */
+  getDataForMultipleRooms(
+    roomIds: string[],
+    startDate: Date,
+    endDate: Date
+  ): Observable<Map<string, Data[]>> {
+    const params = new HttpParams()
+      .set('roomIds', roomIds.join(','))
+      .set('startDate', startDate.toISOString().split('T')[0])
+      .set('endDate', endDate.toISOString().split('T')[0]);
 
-    for (let h = 0; h < hours; h++) {
-      for (let m = 0; m < 60; m += intervalMinutes) {
-        const timestamp = new Date(start.getTime() + h * 3600000 + m * 60000);
+    return this.http.get<ApiResponse<Record<string, any[]>>>(
+      `${this.apiUrl}/rooms`,
+      { headers: this.getAuthHeaders(), params }
+    ).pipe(
+      map(response => {
+        if (response.error || !response.data) {
+          return new Map();
+        }
 
-        const valueTemp = 20 + Math.random() * 5;    // 20–25°C
-        const valueCO2 = 400 + Math.random() * 800;  // 400–1200 ppm
-        const valueHum = 30 + Math.random() * 30;    // 30–60%
-        const climStatus = Math.random() > 0.5;      // true/false aléatoire
+        const result = new Map<string, Data[]>();
+        Object.entries(response.data).forEach(([roomId, items]) => {
+          result.set(roomId, items.map(item => this.mapToData(item)));
+        });
+        return result;
+      }),
+      catchError(err => {
+        console.error('Erreur getDataForMultipleRooms:', err);
+        return of(new Map());
+      })
+    );
+  }
 
-        data.push(new Data(
-          id++,
-          timestamp,
-          parseFloat(valueCO2.toFixed(2)),
-          parseFloat(valueTemp.toFixed(2)),
-          parseFloat(valueHum.toFixed(2)),
-          climStatus,
-          room
-        ));
-      }
-    }
-
-    return of(data);
+  private mapToData(item: any): Data {
+    return {
+      idData: item.idData,
+      timestamp: new Date(item.timestamp),
+      valueCO2: item.valueCO2,
+      valueTemp: item.valueTemp,
+      valueHum: item.valueHum,
+      climStatus: item.climStatus,
+      idRoom: item.idRoom
+    };
   }
 }

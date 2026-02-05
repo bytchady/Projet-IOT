@@ -21,7 +21,7 @@ export class AuthService {
       passwordHash: row.password_hash,
       email: row.email,
       role: row.role,
-      created_at: row.created_at,
+      createdAt: row.created_at,
     };
     if (!user.passwordHash) {
       return null;
@@ -57,7 +57,7 @@ export class AuthService {
       passwordHash: row.password_hash,
       email: row.email,
       role: row.role,
-      created_at: row.created_at,
+      createdAt: row.created_at,
     };
   }
 

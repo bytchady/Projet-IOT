@@ -2,7 +2,7 @@ import {
   Chart,
   defaults,
   registerables
-} from "./chunk-YMGU4D5E.js";
+} from "./chunk-SDJFURPL.js";
 import {
   Directive,
   ElementRef,

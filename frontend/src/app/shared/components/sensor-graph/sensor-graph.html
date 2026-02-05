@@ -1,9 +1,27 @@
 <div class="card p-3 mb-3">
-  <h5>Évolution {{ getMetaLabel(valueKey) }} dans le temps</h5>
+  <h5>{{ getMetaLabel(valueKey).label }}</h5>
 
-  <canvas baseChart
-          [data]="chartData"
-          [options]="chartOptions"
-          [type]="chartType">
-  </canvas>
+  @if (isLoading) {
+    <div class="text-center py-4">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Chargement...</span>
+      </div>
+      <p class="text-muted">Chargement en cours...</p>
+    </div>
+  } @else if (noDataMessage) {
+    <p class="text-muted text-center py-4">{{ noDataMessage }}</p>
+  } @else {
+    @if (chartData.datasets && chartData.datasets.length > 0) {
+      <div style="height: 500px;">
+        <canvas baseChart
+                class="w-100 h-100"
+                [data]="chartData"
+                [options]="chartOptions"
+                [type]="chartType">
+        </canvas>
+      </div>
+    } @else {
+      <p class="text-muted text-center py-4">Aucune donnée disponible (datasets vide)</p>
+    }
+  }
 </div>

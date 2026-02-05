@@ -9,67 +9,140 @@ export class DataController {
     this.dataService = new DataService();
   }
 
-  async getDataByHour(request: FastifyRequest<{ Params: { id: string; heure: string } }>, reply: FastifyReply) {
+  /**
+   * GET /api/data/:roomId/today
+   */
+  async getDataForToday(
+    request: FastifyRequest<{ Params: { roomId: string } }>,
+    reply: FastifyReply
+  ) {
     try {
-      const { id, heure } = request.params;
+      const { roomId } = request.params;
 
-      // Parse hour parameter (expected format: number of hours to look back)
-      const hours = parseInt(heure, 10);
-      if (isNaN(hours) || hours < 1) {
-        throw new BadRequestError('Invalid hour parameter. Must be a positive integer.');
-      }
+      const data = await this.dataService.getDataForToday(roomId);
 
-      const data = await this.dataService.getDataByHour(id, hours);
-      return reply.send(data);
+      return reply.send({
+        message: 'Données du jour récupérées',
+        error: false,
+        data
+      });
     } catch (error) {
-      if (error instanceof BadRequestError) {
-        return reply.status(400).send({ error: error.message });
-      }
-      if (error instanceof NotFoundError) {
-        return reply.status(404).send({ error: error.message });
-      }
-      request.log.error(error);
-      return reply.status(500).send({ error: 'Internal server error' });
+      return this.handleError(error, request, reply);
     }
   }
 
-  async getAllData(request: FastifyRequest<{ Params: { id: string }; Querystring: { limit?: string } }>, reply: FastifyReply) {
+  /**
+   * GET /api/data/:roomId/range?startDate=...&endDate=...
+   */
+  async getDataByDateRange(
+    request: FastifyRequest<{
+      Params: { roomId: string };
+      Querystring: { startDate: string; endDate: string };
+    }>,
+    reply: FastifyReply
+  ) {
     try {
-      const { id } = request.params;
-      const limit = request.query.limit ? parseInt(request.query.limit, 10) : 100;
+      const { roomId } = request.params;
+      const { startDate, endDate } = request.query;
 
-      if (isNaN(limit) || limit < 1) {
-        throw new BadRequestError('Invalid limit parameter');
+      if (!startDate || !endDate) {
+        throw new BadRequestError('Les paramètres startDate et endDate sont requis');
       }
 
-      const data = await this.dataService.getAllData(id, limit);
-      return reply.send(data);
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+
+      if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+        throw new BadRequestError('Format de date invalide (attendu: YYYY-MM-DD)');
+      }
+
+      if (start > end) {
+        throw new BadRequestError('startDate ne peut pas être après endDate');
+      }
+
+      const data = await this.dataService.getDataByDateRange(roomId, start, end);
+
+      return reply.send({
+        message: 'Données récupérées',
+        error: false,
+        data
+      });
     } catch (error) {
-      if (error instanceof BadRequestError) {
-        return reply.status(400).send({ error: error.message });
-      }
-      request.log.error(error);
-      return reply.status(500).send({ error: 'Internal server error' });
+      return this.handleError(error, request, reply);
     }
   }
 
-  async getLatestData(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
+  /**
+   * GET /api/data/rooms?roomIds=id1,id2,id3&startDate=...&endDate=...
+   */
+  async getDataForMultipleRooms(
+    request: FastifyRequest<{
+      Querystring: { roomIds: string; startDate: string; endDate: string };
+    }>,
+    reply: FastifyReply
+  ) {
     try {
-      const { id } = request.params;
+      const { roomIds, startDate, endDate } = request.query;
 
-      const data = await this.dataService.getLatestData(id);
-
-      if (!data) {
-        throw new NotFoundError('No dataset found for this room');
+      if (!roomIds || !startDate || !endDate) {
+        throw new BadRequestError('Les paramètres roomIds, startDate et endDate sont requis');
       }
 
-      return reply.send(data);
+      const roomIdsArray = roomIds.split(',').map(id => id.trim());
+
+      if (roomIdsArray.length === 0) {
+        throw new BadRequestError('Au moins un roomId est requis');
+      }
+
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+
+      if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+        throw new BadRequestError('Format de date invalide');
+      }
+
+      const dataByRoom = await this.dataService.getDataForMultipleRooms(
+        roomIdsArray,
+        start,
+        end
+      );
+
+      // Convertir Map en objet pour JSON
+      const result: Record<string, any[]> = {};
+      dataByRoom.forEach((data, roomId) => {
+        result[roomId] = data;
+      });
+
+      return reply.send({
+        message: 'Données récupérées pour plusieurs salles',
+        error: false,
+        data: result
+      });
     } catch (error) {
-      if (error instanceof NotFoundError) {
-        return reply.status(404).send({ error: error.message });
-      }
-      request.log.error(error);
-      return reply.status(500).send({ error: 'Internal server error' });
+      return this.handleError(error, request, reply);
     }
+  }
+
+  private handleError(error: unknown, request: FastifyRequest, reply: FastifyReply) {
+    if (error instanceof BadRequestError) {
+      return reply.status(400).send({
+        message: error.message,
+        error: true,
+        data: null
+      });
+    }
+    if (error instanceof NotFoundError) {
+      return reply.status(404).send({
+        message: error.message,
+        error: true,
+        data: null
+      });
+    }
+    request.log.error(error);
+    return reply.status(500).send({
+      message: 'Erreur serveur',
+      error: true,
+      data: null
+    });
   }
 }

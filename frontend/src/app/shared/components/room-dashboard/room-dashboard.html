@@ -92,6 +92,19 @@
                   [(ngModel)]="room.nbExteriorWalls">
               }
             </li>
+
+            <li class="mb-2 d-flex align-items-center flex-wrap">
+              <i class="bi bi-cpu me-2"></i>
+              Ip du microcontrôleur :
+              @if (!isEditing) {
+                <span class="ms-1">{{ room.ipArduino }}</span>
+              } @else {
+                <input
+                  type="text"
+                  class="form-control form-control-sm ms-2"
+                  [(ngModel)]="room.ipArduino">
+              }
+            </li>
           </ul>
 
           <div class="mb-3">
@@ -180,33 +193,25 @@
           </div>
 
           <div class="d-flex flex-column gap-4">
-            <div class="w-100">
-              <app-sensor-graph
-                [room]="room"
-                valueKey="valueTemp"
-                color="rgba(255,99,132,1)"
-                style="height:300px; width:100%;">
-              </app-sensor-graph>
-            </div>
-            <div class="w-100">
-              <app-sensor-graph
-                [room]="room"
-                valueKey="valueCO2"
-                color="rgba(54,162,235,1)"
-                style="height:300px; width:100%;">
-              </app-sensor-graph>
-            </div>
-            <div class="w-100">
-              <app-sensor-graph
-                [room]="room"
-                valueKey="valueHum"
-                color="rgba(75,192,92,1)"
-                style="height:300px; width:100%;">
-              </app-sensor-graph>
-            </div>
+            <app-sensor-graph
+              [room]="room"
+              valueKey="valueTemp"
+              color="rgba(255,99,132,1)">
+            </app-sensor-graph>
+
+            <app-sensor-graph
+              [room]="room"
+              valueKey="valueCO2"
+              color="rgba(54,162,235,1)">
+            </app-sensor-graph>
+
+            <app-sensor-graph
+              [room]="room"
+              valueKey="valueHum"
+              color="rgba(75,192,92,1)">
+            </app-sensor-graph>
           </div>
         </div>
-
       </div>
     </div>
   }

@@ -67,13 +67,13 @@ export class RoomsController {
 
         if (!TIME_REGEX.test(start) || !TIME_REGEX.test(end)) {
           throw new BadRequestError(
-            `Format horaire invalide pour ${this.dayTranslations[day] || day}`
+            `Format HH:mm requis pour ${this.dayTranslations[day] || day}, minutes 00 ou 30`
           );
         }
 
         if (toMinutes(start) > toMinutes(end)) {
           throw new BadRequestError(
-            `Horaire invalide pour ${this.dayTranslations[day] || day}`
+            `Horaire invalide pour (${this.dayTranslations[day] || day}) : début après fin.`
           );
         }
       }
@@ -86,7 +86,7 @@ export class RoomsController {
       return reply.send({
         message: "Liste des salles récupérée avec succès",
         error: false,
-        data: rooms // déjà normalisé dans le service
+        data: rooms
       });
     } catch (err) {
       return this.handleError(err, request, reply);
@@ -191,7 +191,10 @@ export class RoomsController {
         throw new NotFoundError("Salle introuvable");
       }
 
-      return reply.code(204).send();
+      return reply.code(201).send({
+        message: "Salle supprimée avec succès",
+        error: false
+      });
     } catch (err) {
       return this.handleError(err, request, reply);
     }

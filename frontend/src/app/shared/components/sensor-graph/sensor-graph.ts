@@ -1,4 +1,4 @@
-import { Component, Input, OnChanges } from '@angular/core';
+import { Component, Input, OnChanges, SimpleChanges, ChangeDetectorRef } from '@angular/core';
 import { Data } from '../../../models/data';
 import { DataServices } from '../../../services/data/data.services';
 import { Room } from '../../../models/room';
@@ -8,157 +8,208 @@ import { ChartData, ChartOptions, ChartType } from 'chart.js';
 @Component({
   selector: 'app-sensor-graph',
   templateUrl: './sensor-graph.html',
+  standalone: true,
   imports: [BaseChartDirective],
   styleUrls: ['./sensor-graph.scss']
 })
 export class SensorGraph implements OnChanges {
 
   @Input() room!: Room;
-  @Input() valueKey!: string;          // 'valueTemp' | 'valueCO2' | 'valueHum'
+  @Input() valueKey!: 'valueTemp' | 'valueCO2' | 'valueHum';
   @Input() color: string = 'rgba(0,0,0,1)';
-  @Input() hours: number = 24;
-
-  @Input() period: 'day' | 'week' | 'month' | 'year' = 'day';
-  @Input() date: Date = new Date();
 
   chartData: ChartData<'line'> = { datasets: [] };
   chartOptions: ChartOptions = {};
   chartType: ChartType = 'line';
-  labels: string[] = [];
+  isLoading: boolean = false;
+  noDataMessage: string = '';
 
-  constructor(private dataService: DataServices) {}
+  constructor(
+    private dataService: DataServices,
+    private cdr: ChangeDetectorRef) {}
 
-  ngOnChanges(): void {
+  ngOnChanges(changes: SimpleChanges): void {
     if (!this.room || !this.valueKey) return;
+
+    if (changes['room'] || changes['valueKey']) {
+      this.loadData();
+    }
+  }
+
+  refresh(): void {
     this.loadData();
   }
 
   private loadData() {
-    this.dataService
-      .getMeasuresByRoom(this.room, this.hours, this.period, this.date)
-      .subscribe(data => this.processData(data));
-  }
+    console.log('🚀 loadData() appelé pour', this.valueKey);
+    this.isLoading = true;
+    this.noDataMessage = '';
 
-  private processData(measures: Data[]) {
+    // Récupérer le jour de la semaine (lundi, mardi, etc.)
+    const today = new Date();
+    const dayKey = this.getDayKey(today);
+    const schedule = this.room.schedule[dayKey];
 
-    const dayKey = this.getDayKey(this.date);
-    const sched = this.room.schedule[dayKey];
+    console.log('📅 Jour:', dayKey, 'Schedule:', schedule);
 
-    // 🚫 Salle fermée ou horaires inexistants → pas de graph
-    if (
-      !sched ||
-      sched.isClosed ||
-      sched.start === null ||
-      sched.end === null
-    ) {
+    // Vérifier si la salle est fermée aujourd'hui
+    if (!schedule || schedule.isClosed || !schedule.start || !schedule.end) {
+      console.log('🔒 Salle fermée');
+      this.isLoading = false;
+      this.noDataMessage = 'La salle est fermée aujourd\'hui';
       this.chartData = { datasets: [] };
-      this.labels = [];
       return;
     }
 
-    // Intervalle entre les points (30 min)
-    const interval = 0.5;
+    console.log('📞 Appel API getTodayMeasures...');
+
+    // Récupérer les données d'aujourd'hui
+    this.dataService.getTodayMeasures(this.room.idRoom).subscribe({
+      next: (measures) => {
+        console.log('✅ Réponse API reçue:', measures.length, 'mesures');
+        this.processData(measures, schedule.start!, schedule.end!);
+        this.isLoading = false;
+        this.cdr.detectChanges();
+        console.log('✅ isLoading =', this.isLoading);
+      },
+      error: (err) => {
+        console.error('❌ Erreur API:', err);
+        this.isLoading = false;
+        this.noDataMessage = 'Erreur lors du chargement des données';
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  private processData(measures: Data[], startTime: string, endTime: string) {
+    console.log('🔍 processData appelé');
+    console.log('📊 Nombre de mesures:', measures.length);
+    console.log('⏰ Horaires:', startTime, '-', endTime);
+
+    if (!measures || measures.length === 0) {
+      console.log('❌ Aucune mesure');
+      this.noDataMessage = 'Aucune donnée disponible pour aujourd\'hui';
+      this.chartData = { datasets: [] };
+      return;
+    }
+
+    // Parser les horaires de début et fin (format "HH:mm")
+    const [startHour, startMin] = startTime.split(':').map(Number);
+    const [endHour, endMin] = endTime.split(':').map(Number);
+
+    const startDecimal = startHour + startMin / 60;
+    const endDecimal = endHour + endMin / 60;
+
+    // Limiter à l'heure actuelle si on est aujourd'hui
     const now = new Date();
+    const currentDecimal = now.getHours() + now.getMinutes() / 60;
+    const maxDecimal = Math.min(endDecimal, currentDecimal);
 
-    let startHour = 0;
-    let endHour = 23;
+    console.log('📍 Plage horaire:', startDecimal, '-', maxDecimal);
 
-    const [hStart, mStart] = sched.start.split(':').map(Number);
-    const [hEnd, mEnd] = sched.end.split(':').map(Number);
-
-    startHour = hStart + mStart / 60;
-    endHour = hEnd + mEnd / 60;
-
-    // Cas particulier : aujourd’hui → ne pas dépasser l’heure actuelle
-    if (
-      this.period === 'day' &&
-      this.date.toDateString() === now.toDateString()
-    ) {
-      endHour = Math.min(
-        endHour,
-        now.getHours() + now.getMinutes() / 60
-      );
+    // ✅ Générer les labels X pour l'affichage (toutes les demi-heures)
+    const displayLabels: string[] = [];
+    for (let h = Math.floor(startDecimal); h <= Math.floor(maxDecimal); h++) {
+      displayLabels.push(`${h.toString().padStart(2, '0')}:00`);
+      if (h + 0.5 <= maxDecimal) {
+        displayLabels.push(`${h.toString().padStart(2, '0')}:30`);
+      }
     }
 
-    // Génération des labels
-    const labels: string[] = [];
-    for (let t = startHour; t <= endHour; t += interval) {
-      const hours = Math.floor(t);
-      const minutes = Math.round((t - hours) * 60);
-      labels.push(
-        `${hours.toString().padStart(2, '0')}:${minutes
-          .toString()
-          .padStart(2, '0')}`
-      );
-    }
+    console.log('🏷️ Labels X affichage (tous les 30 min):', displayLabels);
 
-    // Agrégation des données
-    const summed: number[] = Array(labels.length).fill(0);
-    const count: number[] = Array(labels.length).fill(0);
+    // ✅ Préparer les données brutes pour chaque mesure
+    const chartLabels: string[] = [];
+    const chartValues: (number | null)[] = [];
 
     measures.forEach(m => {
-      const value = (m as any)[this.valueKey];
-      if (typeof value !== 'number') return;
+      const value = m[this.valueKey];
+      if (value === null || value === undefined) return;
 
-      const t = m.timestamp.getHours() + m.timestamp.getMinutes() / 60;
-      if (t < startHour || t > endHour) return;
+      const timestamp = new Date(m.timestamp);
+      const timeDecimal = timestamp.getHours() + timestamp.getMinutes() / 60;
 
-      const index = Math.floor((t - startHour) / interval);
-      if (index < 0 || index >= summed.length) return;
+      if (timeDecimal < startDecimal || timeDecimal > maxDecimal) return;
 
-      summed[index] += value;
-      count[index]++;
+      const label = `${timestamp.getHours().toString().padStart(2,'0')}:${timestamp.getMinutes().toString().padStart(2,'0')}`;
+      chartLabels.push(label);
+      chartValues.push(Number(value));
     });
 
-    const averaged = summed.map((s, i) =>
-      count[i] ? s / count[i] : null
-    );
+    console.log('📊 Labels pour points:', chartLabels);
+    console.log('📊 Valeurs pour points:', chartValues);
 
-    this.labels = labels;
+    // Construire le graphique avec toutes les mesures
+    this.buildChart(chartLabels, chartValues, displayLabels);
+  }
 
+
+  private buildChart(chartLabels: string[], chartValues: (number | null)[], displayLabels: string[]) {
     const meta = this.getMetaLabel(this.valueKey);
 
     this.chartData = {
-      labels: this.labels,
+      labels: chartLabels,
       datasets: [
         {
-          data: averaged,
+          data: chartValues,
           label: meta.label,
           borderColor: this.color,
           backgroundColor: 'transparent',
           tension: 0.3,
-          spanGaps: false
+          spanGaps: true,
+          pointRadius: 3,
+          pointHoverRadius: 6,
+          borderWidth: 2
         }
       ]
     };
 
     this.chartOptions = {
       responsive: true,
+      maintainAspectRatio: false,
       plugins: {
-        legend: { display: true }
+        legend: { display: true, position: 'top' },
+        tooltip: {
+          mode: 'index',
+          intersect: false,
+          callbacks: {
+            label: (context) => {
+              const label = context.dataset.label || '';
+              const value = context.parsed.y;
+              return `${label}: ${value !== null ? value.toFixed(2) : 'N/A'} ${meta.unit}`;
+            }
+          }
+        }
       },
       scales: {
         x: {
-          title: { display: true, text: 'Heure' }
+          title: { display: true, text: 'Heure', font: { size: 14, weight: 'bold' } },
+          ticks: {
+            autoSkip: false,
+            callback: (value, index) => {
+              const label = this.chartData.labels![index] as string;
+              // Afficher seulement les demi-heures (HH:00 et HH:30)
+              return label.endsWith('00') || label.endsWith('30') ? label : '';
+            }
+          },
+          grid: { display: true, color: 'rgba(0, 0, 0, 0.05)' }
         },
         y: {
-          title: { display: true, text: meta.unit }
+          title: { display: true, text: meta.unit, font: { size: 14, weight: 'bold' } },
+          beginAtZero: false,
+          grid: { display: true, color: 'rgba(0, 0, 0, 0.05)' }
         }
-      }
+      },
+      interaction: { mode: 'index', intersect: false }
     };
   }
 
+
   private getDayKey(date: Date): keyof Room['schedule'] {
-    const days = [
-      'sunday',
-      'monday',
-      'tuesday',
-      'wednesday',
-      'thursday',
-      'friday',
-      'saturday'
+    const days: (keyof Room['schedule'])[] = [
+      'sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'
     ];
-    return days[date.getDay()] as keyof Room['schedule'];
+    return days[date.getDay()];
   }
 
   getMetaLabel(key: string) {

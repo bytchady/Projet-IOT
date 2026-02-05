@@ -12,7 +12,7 @@
 //
 // interface TopRoom {
 //   room: Room;
-//   loss: number; // déperdition thermique
+//   loss: number;
 //   data: Data[];
 // }
 //
@@ -23,10 +23,14 @@
 //   styleUrls: ['./report.scss'],
 // })
 // export class Report implements OnInit {
-//   startDate!: string;
-//   endDate!: string;
+//   startDate!: Date;
+//   endDate!: Date;
+//   startDateString!: string;
+//   endDateString!: string;
+//
 //   topRooms: TopRoom[] = [];
 //   rooms: Room[] = [];
+//   isLoading: boolean = false;
 //
 //   constructor(
 //     private dataService: DataServices,
@@ -34,50 +38,67 @@
 //   ) {}
 //
 //   async ngOnInit() {
-//     const today = new Date().toISOString().substring(0, 10);
+//     const today = new Date();
 //     this.startDate = today;
 //     this.endDate = today;
+//     this.startDateString = today.toISOString().substring(0, 10);
+//     this.endDateString = today.toISOString().substring(0, 10);
 //
-//     // Récupérer toutes les salles depuis le backend
 //     try {
-//       const res = await lastValueFrom(this.roomsService.getRooms());
-//       if (!res.error) {
-//         this.rooms = res.data;
-//         this.computeTopRooms();
-//       } else {
-//         console.error('Erreur serveur:', res.message);
-//       }
+//       this.rooms = await lastValueFrom(this.roomsService.getRooms());
+//       await this.computeTopRooms();
 //     } catch (err) {
 //       console.error('Erreur lors de la récupération des salles', err);
 //     }
 //   }
 //
 //   async onStartDateChange() {
-//     if (this.endDate && this.startDate > this.endDate) this.endDate = this.startDate;
+//     this.startDate = new Date(this.startDateString);
+//     if (this.endDateString && this.startDateString > this.endDateString) {
+//       this.endDateString = this.startDateString;
+//       this.endDate = new Date(this.endDateString);
+//     }
 //     await this.computeTopRooms();
 //   }
 //
 //   async onEndDateChange() {
-//     if (this.startDate && this.endDate < this.startDate) this.endDate = this.endDate;
+//     this.endDate = new Date(this.endDateString);
+//     if (this.startDateString && this.endDateString < this.startDateString) {
+//       this.startDateString = this.endDateString;
+//       this.startDate = new Date(this.startDateString);
+//     }
 //     await this.computeTopRooms();
 //   }
 //
 //   async computeTopRooms() {
+//     this.isLoading = true;
+//
 //     const promises = this.rooms.map(async room => {
 //       try {
-//         const measures = await lastValueFrom(this.dataService.getMeasuresByRoom(room, this.startDate, this.endDate));
-//         const safeMeasures = measures || [];
+//         const measures = await lastValueFrom(
+//           this.dataService.getDataByDateRange(
+//             room.idRoom,
+//             this.startDate,
+//             this.endDate
+//           )
+//         );
+//
+//         const safeMeasures: Data[] = measures ?? [];
 //         const loss = this.calculateLoss(room, safeMeasures);
+//
 //         return { room, loss, data: safeMeasures };
+//
 //       } catch (err) {
 //         console.error(`Erreur récupération mesures pour ${room.nameRoom}`, err);
-//         return { room, loss: 0, data: [] };
+//         return { room, loss: 0, data: [] as Data[] };
 //       }
 //     });
 //
 //     this.topRooms = (await Promise.all(promises))
 //       .sort((a, b) => b.loss - a.loss)
 //       .slice(0, 3);
+//
+//     this.isLoading = false;
 //   }
 //
 //   calculateLoss(room: Room, measures: Data[]): number {
@@ -87,6 +108,8 @@
 //
 //     let totalLoss = 0;
 //     measures.forEach(m => {
+//       if (m.valueTemp === null) return;
+//
 //       const deltaTemp = Math.max(room.maxTemp - m.valueTemp, 0);
 //       const structureFactor =
 //         factorGlass * room.glazedSurface +
@@ -103,7 +126,7 @@
 //     switch (type) {
 //       case 'Temperature': return 'rgba(255,99,132,1)';
 //       case 'CO2': return 'rgba(54,162,235,1)';
-//       case 'Humidity': return 'rgba(162,235,1,0.6)';
+//       case 'Humidity': return 'rgba(75,192,92,1)';
 //       default: return 'rgba(0,0,0,1)';
 //     }
 //   }

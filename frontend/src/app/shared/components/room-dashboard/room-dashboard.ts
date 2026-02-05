@@ -20,24 +20,22 @@ import { ServerMessagesServices } from '../../../services/server-messages/server
   styleUrls: ['./room-dashboard.scss'],
 })
 export class RoomDashboard implements OnInit {
+
   @ViewChild('tempGraph') tempGraph?: SensorGraph;
   @ViewChild('co2Graph') co2Graph?: SensorGraph;
   @ViewChild('humGraph') humGraph?: SensorGraph;
 
   room: Room | null = null;
-  isLoading: boolean = true;
+  isLoading = true;
   isEditing = false;
   today = '';
   currentDayIndex = 0;
 
+  todayHours = 24;
+  todayKey!: keyof Room['schedule'];
+
   readonly weekDays: (keyof Room['schedule'])[] = [
-    'monday',
-    'tuesday',
-    'wednesday',
-    'thursday',
-    'friday',
-    'saturday',
-    'sunday',
+    'monday','tuesday','wednesday','thursday','friday','saturday','sunday',
   ];
 
   readonly dayTranslations: Record<keyof Room['schedule'], string> = {
@@ -59,21 +57,29 @@ export class RoomDashboard implements OnInit {
   ) {}
 
   ngOnInit(): void {
+
     const id = this.route.snapshot.paramMap.get('id');
     if (!id) {
       this.router.navigate(['/']);
       return;
     }
 
-    this.today = new Date().toLocaleDateString('fr-FR');
-    this.isLoading = true;
+    const now = new Date();
+
+    this.today = now.toLocaleDateString('fr-FR');
+    this.todayHours = now.getHours() + 1;
+
+    const jsDay = now.getDay();
+    const map: (keyof Room['schedule'])[] = [
+      'sunday','monday','tuesday','wednesday','thursday','friday','saturday'
+    ];
+    this.todayKey = map[jsDay];
 
     this.roomsService.getRoomById(id).subscribe({
       next: (room) => {
         if (!room) {
           this.serverMessageService.showMessage('Salle introuvable', true);
           this.isLoading = false;
-          this.cdr.detectChanges();
           this.router.navigate(['/']);
           return;
         }
@@ -84,18 +90,14 @@ export class RoomDashboard implements OnInit {
       error: () => {
         this.serverMessageService.showMessage('Erreur serveur', true);
         this.isLoading = false;
-        this.cdr.detectChanges();
         this.router.navigate(['/']);
       },
     });
   }
 
   toggleEdit(): void {
-    if (this.isEditing) {
-      this.saveRoomChanges();
-    } else {
-      this.isEditing = true;
-    }
+    if (this.isEditing) this.saveRoomChanges();
+    else this.isEditing = true;
   }
 
   saveRoomChanges(): void {
@@ -104,9 +106,9 @@ export class RoomDashboard implements OnInit {
     this.roomsService.updateRoom(this.room).subscribe({
       next: (updatedRoom) => {
         this.room = updatedRoom;
-        this.tempGraph?.ngOnChanges();
-        this.co2Graph?.ngOnChanges();
-        this.humGraph?.ngOnChanges();
+        this.tempGraph?.refresh();
+        this.co2Graph?.refresh();
+        this.humGraph?.refresh();
         this.isEditing = false;
         this.cdr.detectChanges();
       }
@@ -134,7 +136,9 @@ export class RoomDashboard implements OnInit {
 
     const input = event.target as HTMLInputElement;
     let value = Number(input.value);
+
     if (value > this.room.maxTemp) value = this.room.maxTemp;
+
     this.room.minTemp = value;
     input.value = value.toString();
   }
@@ -144,7 +148,9 @@ export class RoomDashboard implements OnInit {
 
     const input = event.target as HTMLInputElement;
     let value = Number(input.value);
+
     if (value < this.room.minTemp) value = this.room.minTemp;
+
     this.room.maxTemp = value;
     input.value = value.toString();
   }
@@ -167,6 +173,7 @@ export class RoomDashboard implements OnInit {
     if (!this.room) return;
 
     const schedule = this.room.schedule[day];
+
     if (schedule.isClosed) {
       schedule.start = null;
       schedule.end = null;
