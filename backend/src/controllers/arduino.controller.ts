@@ -12,14 +12,16 @@ export class ArduinoController {
 
   async publishData(request: FastifyRequest<{ Body: ArduinoPublishRequest }>, reply: FastifyReply) {
     try {
-      const data = request.body;
+      const measurements = request.body;
 
-      if (!data.idRoom) {
-        throw new BadRequestError('Room ID is required');
+      if (!Array.isArray(measurements) || measurements.length === 0) {
+        throw new BadRequestError('Request body must be a non-empty array');
       }
 
-      const measurement = await this.arduinoService.saveMeasurement(data);
-      return reply.status(201).send(measurement);
+      const ip = request.ip;
+
+      const saved = await this.arduinoService.saveMeasurements(ip, measurements);
+      return reply.status(201).send(saved);
     } catch (error) {
       if (error instanceof BadRequestError) {
         return reply.status(400).send({ error: error.message });

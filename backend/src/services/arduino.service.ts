@@ -1,52 +1,60 @@
 import { query } from '../config/database.js';
-import { ArduinoPublishRequest, MeasurementData, Rooms } from '../models/types.js';
+import { ArduinoMeasurement, MeasurementData, Rooms } from '../models/types.js';
 import { NotFoundError } from '../utils/errors.js';
 
 export class ArduinoService {
-  async saveMeasurement(data: ArduinoPublishRequest): Promise<MeasurementData> {
-    // Verify room exists
+  async saveMeasurements(ip: string, measurements: ArduinoMeasurement[]): Promise<MeasurementData[]> {
+    // Find room by Arduino IP
     const roomResult = await query<Rooms>(
-      'SELECT * FROM salle WHERE id_room = $1 AND is_exists = TRUE',
-      [data.idRoom]
+      'SELECT * FROM rooms WHERE ip_arduino = $1 AND is_exists = TRUE',
+      [ip]
     );
 
     if (roomResult.rows.length === 0) {
-      throw new NotFoundError('Room not found');
+      throw new NotFoundError(`No room found for Arduino IP: ${ip}`);
     }
 
-    // Insert measurement
-    const result = await query<MeasurementData>(
-      `INSERT INTO data (timestamp, value_co2, value_temp, value_hum, clim_status, id_room)
-       VALUES (NOW(), $1, $2, $3, $4, $5)
-       RETURNING *`,
-      [
-        data.valueCO2 ?? null,
-        data.valueTemp ?? null,
-        data.climStatus ?? null,
-        data.idRoom
-      ]
-    );
+    const room = roomResult.rows[0];
+    const idRoom = room.id_room;
+    const saved: MeasurementData[] = [];
 
-    const measurement = result.rows[0];
+    for (const data of measurements) {
+      const result = await query<MeasurementData>(
+        `INSERT INTO data (timestamp, value_co2, value_temp, value_hum, clim_status, id_room)
+         VALUES ($1, $2, $3, $4, $5, $6)
+         RETURNING *`,
+        [
+          data.timestamp ?? new Date().toISOString(),
+          data.valueCO2 ?? null,
+          data.valueTemp ?? null,
+          data.valueHum ?? null,
+          data.climStatus ?? null,
+          idRoom
+        ]
+      );
 
-    // Check thresholds and potentially trigger alerts
-    await this.checkThresholds(roomResult.rows[0], measurement);
+      const measurement = result.rows[0];
+      saved.push(measurement);
 
-    return measurement;
+      // Check thresholds
+      await this.checkThresholds(room, measurement);
+    }
+
+    return saved;
   }
 
   private async checkThresholds(room: Rooms, measurement: MeasurementData): Promise<void> {
     const alerts: string[] = [];
-    // Check temperature thresholds
-    if (room.minTemp && measurement.valueTemp && measurement.valueTemp < room.minTemp) {
-      alerts.push(`Temperature (${measurement.valueTemp}) below minimum (${room.minTemp})`);
+
+    if (room.min_temp && measurement.value_temp && measurement.value_temp < room.min_temp) {
+      alerts.push(`Temperature (${measurement.value_temp}) below minimum (${room.min_temp})`);
     }
-    if (room.maxTemp && measurement.valueTemp && measurement.valueTemp > room.maxTemp) {
-      alerts.push(`Temperature (${measurement.valueTemp}) above maximum (${room.maxTemp})`);
+    if (room.max_temp && measurement.value_temp && measurement.value_temp > room.max_temp) {
+      alerts.push(`Temperature (${measurement.value_temp}) above maximum (${room.max_temp})`);
     }
 
     if (alerts.length > 0) {
-      console.log(`[ALERT] Room ${room.nameRoom} (${room.idRoom}):`, alerts);
+      console.log(`[ALERT] Room ${room.name_room} (${room.id_room}):`, alerts);
     }
   }
 

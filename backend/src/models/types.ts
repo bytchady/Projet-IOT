@@ -80,14 +80,15 @@ export interface MeasurementData {
   idRoom: string;
 }
 
-export interface ArduinoPublishRequest {
-  timestamp?: Date;
+export interface ArduinoMeasurement {
+  timestamp: string;
   valueCO2?: number;
   valueTemp?: number;
   valueHum?: number;
   climStatus?: boolean;
-  idRoom: string;
 }
+
+export type ArduinoPublishRequest = ArduinoMeasurement[];
 
 export interface ArduinoTempConfig {
   minTemp: number;
@@ -96,9 +97,9 @@ export interface ArduinoTempConfig {
 
 export interface ArduinoHoursConfig {
   schedules: {
-    dayOfWeek: WeekDay;
-    startTime: string;
-    endTime: string;
+    day_of_week: WeekDay;
+    start_time: string;
+    end_time: string;
   }[];
 }
 

@@ -5,20 +5,22 @@ import { ArduinoPublishRequest } from '../models/types.js';
 export async function arduinoRoutes(fastify: FastifyInstance): Promise<void> {
   const arduinoController = new ArduinoController();
 
-  // PUT /arduino/publish - Arduino sends measurement dataset
+  // PUT /arduino/publish - Arduino sends measurement data
   fastify.put<{ Body: ArduinoPublishRequest }>(
     '/publish',
     {
       schema: {
         body: {
-          type: 'object',
-          required: ['id_room'],
-          properties: {
-            id_room: { type: 'string' },
-            value_co2: { type: 'integer' },
-            value_temp: { type: 'number' },
-            value_hum: { type: 'number' },
-            clim_status: { type: 'boolean' }
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              timestamp: { type: 'string' },
+              valueCO2: { type: 'integer' },
+              valueTemp: { type: 'number' },
+              valueHum: { type: 'number' },
+              climStatus: { type: 'boolean' }
+            }
           }
         }
       }
