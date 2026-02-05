@@ -7,6 +7,8 @@ import { Room } from '../../../models/room';
 import { RoomsServices } from '../../../services/rooms/rooms.service';
 import { SensorGraph } from '../sensor-graph/sensor-graph';
 import { ServerMessagesServices } from '../../../services/server-messages/server-messages.services';
+import {EMPTY} from 'rxjs';
+import {tap} from 'rxjs/operators';
 
 @Component({
   selector: 'app-room-dashboard',
@@ -27,6 +29,7 @@ export class RoomDashboard implements OnInit {
 
   room: Room | null = null;
   isLoading = true;
+  isSaving: boolean = false;
   isEditing = false;
   today = '';
   currentDayIndex = 0;
@@ -96,23 +99,37 @@ export class RoomDashboard implements OnInit {
   }
 
   toggleEdit(): void {
-    if (this.isEditing) this.saveRoomChanges();
-    else this.isEditing = true;
+    if (this.isEditing) {
+      if (!this.room) return;
+
+      this.isSaving = true;
+
+      this.saveRoomChanges().subscribe({
+        next: () => {
+          this.isSaving = false;
+          this.isEditing = false;
+        },
+        error: () => {
+          this.isSaving = false;
+        }
+      });
+    } else {
+      this.isEditing = true;
+    }
   }
 
-  saveRoomChanges(): void {
-    if (!this.room) return;
+  saveRoomChanges() {
+    if (!this.room) return EMPTY;
 
-    this.roomsService.updateRoom(this.room).subscribe({
-      next: (updatedRoom) => {
+    return this.roomsService.updateRoom(this.room).pipe(
+      tap((updatedRoom) => {
         this.room = updatedRoom;
         this.tempGraph?.refresh();
         this.co2Graph?.refresh();
         this.humGraph?.refresh();
-        this.isEditing = false;
         this.cdr.detectChanges();
-      }
-    });
+      })
+    );
   }
 
   onDeleteRoom(): void {

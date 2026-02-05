@@ -27,14 +27,18 @@
             <h3>Informations</h3>
 
             <div class="d-flex gap-2 flex-wrap mt-2 mt-md-0">
-              <button class="btn btn-sm btn-outline-primary" (click)="toggleEdit()">
+              <button class="btn btn-sm btn-outline-primary" (click)="toggleEdit()" [disabled]="isSaving">
                 @if (!isEditing) {
                   <i class="bi bi-pencil"></i>
                 } @else {
                   <i class="bi bi-save me-1"></i> Enregistrer
                 }
+                @if (isSaving) {
+                  <span class="spinner-border spinner-border-sm ms-2" role="status" aria-hidden="true"></span>
+                }
               </button>
-              <button class="btn btn-sm btn-outline-danger" (click)="onDeleteRoom()">
+
+              <button class="btn btn-sm btn-outline-danger" (click)="onDeleteRoom()" [disabled]="isSaving">
                 <i class="bi bi-trash"></i>
               </button>
             </div>
