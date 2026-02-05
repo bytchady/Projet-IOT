@@ -50,24 +50,11 @@ export class SensorGraph implements OnChanges {
     const dayKey = this.getDayKey(today);
     const schedule = this.room.schedule[dayKey];
 
-    console.log('📅 Jour:', dayKey, 'Schedule:', schedule);
-
-    // Vérifier si la salle est fermée aujourd'hui
-    if (!schedule || schedule.isClosed || !schedule.start || !schedule.end) {
-      console.log('🔒 Salle fermée');
-      this.isLoading = false;
-      this.noDataMessage = 'La salle est fermée aujourd\'hui';
-      this.chartData = { datasets: [] };
-      return;
-    }
-
-    console.log('📞 Appel API getTodayMeasures...');
-
     // Récupérer les données d'aujourd'hui
     this.dataService.getTodayMeasures(this.room.idRoom).subscribe({
       next: (measures) => {
         console.log('✅ Réponse API reçue:', measures.length, 'mesures');
-        this.processData(measures, schedule.start!, schedule.end!);
+        this.processData(measures);
         this.isLoading = false;
         this.cdr.detectChanges();
         console.log('✅ isLoading =', this.isLoading);
@@ -81,44 +68,13 @@ export class SensorGraph implements OnChanges {
     });
   }
 
-  private processData(measures: Data[], startTime: string, endTime: string) {
-    console.log('🔍 processData appelé');
-    console.log('📊 Nombre de mesures:', measures.length);
-    console.log('⏰ Horaires:', startTime, '-', endTime);
-
+  private processData(measures: Data[]) {
     if (!measures || measures.length === 0) {
-      console.log('❌ Aucune mesure');
       this.noDataMessage = 'Aucune donnée disponible pour aujourd\'hui';
       this.chartData = { datasets: [] };
       return;
     }
 
-    // Parser les horaires de début et fin (format "HH:mm")
-    const [startHour, startMin] = startTime.split(':').map(Number);
-    const [endHour, endMin] = endTime.split(':').map(Number);
-
-    const startDecimal = startHour + startMin / 60;
-    const endDecimal = endHour + endMin / 60;
-
-    // Limiter à l'heure actuelle si on est aujourd'hui
-    const now = new Date();
-    const currentDecimal = now.getHours() + now.getMinutes() / 60;
-    const maxDecimal = Math.min(endDecimal, currentDecimal);
-
-    console.log('📍 Plage horaire:', startDecimal, '-', maxDecimal);
-
-    // ✅ Générer les labels X pour l'affichage (toutes les demi-heures)
-    const displayLabels: string[] = [];
-    for (let h = Math.floor(startDecimal); h <= Math.floor(maxDecimal); h++) {
-      displayLabels.push(`${h.toString().padStart(2, '0')}:00`);
-      if (h + 0.5 <= maxDecimal) {
-        displayLabels.push(`${h.toString().padStart(2, '0')}:30`);
-      }
-    }
-
-    console.log('🏷️ Labels X affichage (tous les 30 min):', displayLabels);
-
-    // ✅ Préparer les données brutes pour chaque mesure
     const chartLabels: string[] = [];
     const chartValues: (number | null)[] = [];
 
@@ -127,28 +83,30 @@ export class SensorGraph implements OnChanges {
       if (value === null || value === undefined) return;
 
       const timestamp = new Date(m.timestamp);
-      const timeDecimal = timestamp.getHours() + timestamp.getMinutes() / 60;
+      const hours = timestamp.getUTCHours();    // <-- UTC
+      const minutes = timestamp.getUTCMinutes(); // <-- UTC
 
-      if (timeDecimal < startDecimal || timeDecimal > maxDecimal) return;
-
-      const label = `${timestamp.getHours().toString().padStart(2,'0')}:${timestamp.getMinutes().toString().padStart(2,'0')}`;
+      const label = `${hours.toString().padStart(2,'0')}:${minutes.toString().padStart(2,'0')}`;
       chartLabels.push(label);
       chartValues.push(Number(value));
     });
 
     console.log('📊 Labels pour points:', chartLabels);
-    console.log('📊 Valeurs pour points:', chartValues);
 
-    // Construire le graphique avec toutes les mesures
+    // ✅ Labels X visibles toutes les heures (00:00, 01:00, …, 23:00)
+    const displayLabels: string[] = [];
+    for (let h = 0; h <= 23; h++) {
+      displayLabels.push(`${h.toString().padStart(2,'0')}:00`);
+    }
+
     this.buildChart(chartLabels, chartValues, displayLabels);
   }
-
 
   private buildChart(chartLabels: string[], chartValues: (number | null)[], displayLabels: string[]) {
     const meta = this.getMetaLabel(this.valueKey);
 
     this.chartData = {
-      labels: chartLabels,
+      labels: chartLabels, // toutes les mesures de la journée
       datasets: [
         {
           data: chartValues,
@@ -157,8 +115,8 @@ export class SensorGraph implements OnChanges {
           backgroundColor: 'transparent',
           tension: 0.3,
           spanGaps: true,
-          pointRadius: 3,
-          pointHoverRadius: 6,
+          pointRadius: 2,
+          pointHoverRadius: 4,
           borderWidth: 2
         }
       ]
@@ -186,10 +144,12 @@ export class SensorGraph implements OnChanges {
           title: { display: true, text: 'Heure', font: { size: 14, weight: 'bold' } },
           ticks: {
             autoSkip: false,
+            maxRotation: 0,
+            minRotation: 0,
             callback: (value, index) => {
               const label = this.chartData.labels![index] as string;
-              // Afficher seulement les demi-heures (HH:00 et HH:30)
-              return label.endsWith('00') || label.endsWith('30') ? label : '';
+              // Afficher uniquement les heures complètes
+              return label.endsWith('00') ? label : '';
             }
           },
           grid: { display: true, color: 'rgba(0, 0, 0, 0.05)' }
@@ -203,7 +163,6 @@ export class SensorGraph implements OnChanges {
       interaction: { mode: 'index', intersect: false }
     };
   }
-
 
   private getDayKey(date: Date): keyof Room['schedule'] {
     const days: (keyof Room['schedule'])[] = [
