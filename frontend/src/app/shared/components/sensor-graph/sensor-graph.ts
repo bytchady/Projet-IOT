@@ -41,26 +41,20 @@ export class SensorGraph implements OnChanges {
   }
 
   private loadData() {
-    console.log('🚀 loadData() appelé pour', this.valueKey);
     this.isLoading = true;
     this.noDataMessage = '';
 
-    // Récupérer le jour de la semaine (lundi, mardi, etc.)
     const today = new Date();
     const dayKey = this.getDayKey(today);
     const schedule = this.room.schedule[dayKey];
 
-    // Récupérer les données d'aujourd'hui
     this.dataService.getTodayMeasures(this.room.idRoom).subscribe({
       next: (measures) => {
-        console.log('✅ Réponse API reçue:', measures.length, 'mesures');
         this.processData(measures);
         this.isLoading = false;
         this.cdr.detectChanges();
-        console.log('✅ isLoading =', this.isLoading);
       },
       error: (err) => {
-        console.error('❌ Erreur API:', err);
         this.isLoading = false;
         this.noDataMessage = 'Erreur lors du chargement des données';
         this.cdr.detectChanges();
@@ -91,9 +85,6 @@ export class SensorGraph implements OnChanges {
       chartValues.push(Number(value));
     });
 
-    console.log('📊 Labels pour points:', chartLabels);
-
-    // ✅ Labels X visibles toutes les heures (00:00, 01:00, …, 23:00)
     const displayLabels: string[] = [];
     for (let h = 0; h <= 23; h++) {
       displayLabels.push(`${h.toString().padStart(2,'0')}:00`);
@@ -106,7 +97,7 @@ export class SensorGraph implements OnChanges {
     const meta = this.getMetaLabel(this.valueKey);
 
     this.chartData = {
-      labels: chartLabels, // toutes les mesures de la journée
+      labels: chartLabels,
       datasets: [
         {
           data: chartValues,
