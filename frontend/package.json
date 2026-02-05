@@ -2,11 +2,10 @@
   "name": "iot",
   "version": "0.0.0",
   "scripts": {
-    "ng": "../node_modules/.bin/ng",
-    "start": "ng serve --proxy-config proxy.conf.json",
-    "build": "../node_modules/.bin/ng build",
-    "watch": "../node_modules/.bin/ng build --watch --configuration development",
-    "test": "../node_modules/.bin/ng test"
+    "ng": "node_modules/.bin/ng",
+    "build": "node_modules/.bin/ng build",
+    "watch": "node_modules/.bin/ng build --watch --configuration development",
+    "test": "node_modules/.bin/ng test"
   },
   "prettier": {
     "printWidth": 100,
