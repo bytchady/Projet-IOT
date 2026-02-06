@@ -37,13 +37,14 @@ export class AuthController {
           }
         });
 
-    } catch (error) {
+    } catch (error: any) {
       request.log.error(error);
+
       return reply
-        .code(500)
+        .code(error.statusCode ?? 500)
         .type('application/json')
         .send({
-          message: "Erreur serveur interne",
+          message: error.message ?? "Erreur serveur interne",
           error: true
         });
     }
