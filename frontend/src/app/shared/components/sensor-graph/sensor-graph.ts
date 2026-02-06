@@ -26,7 +26,8 @@ export class SensorGraph implements OnChanges {
 
   constructor(
     private dataService: DataServices,
-    private cdr: ChangeDetectorRef) {}
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnChanges(changes: SimpleChanges): void {
     if (!this.room || !this.valueKey) return;
@@ -41,20 +42,19 @@ export class SensorGraph implements OnChanges {
   }
 
   private loadData() {
+    console.log('🚀 loadData() appelé pour', this.valueKey);
     this.isLoading = true;
     this.noDataMessage = '';
 
-    const today = new Date();
-    const dayKey = this.getDayKey(today);
-    const schedule = this.room.schedule[dayKey];
-
     this.dataService.getTodayMeasures(this.room.idRoom).subscribe({
       next: (measures) => {
+        console.log('✅ Réponse API reçue:', measures.length, 'mesures');
         this.processData(measures);
         this.isLoading = false;
         this.cdr.detectChanges();
       },
       error: (err) => {
+        console.error('❌ Erreur API:', err);
         this.isLoading = false;
         this.noDataMessage = 'Erreur lors du chargement des données';
         this.cdr.detectChanges();
@@ -69,50 +69,51 @@ export class SensorGraph implements OnChanges {
       return;
     }
 
-    const chartLabels: string[] = [];
-    const chartValues: (number | null)[] = [];
+    // Trier les mesures par timestamp
+    const sortedMeasures = [...measures].sort((a, b) =>
+      new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+    );
 
-    measures.forEach(m => {
+    // Extraire les données
+    const dataPoints: Array<{ x: number; y: number; timestamp: Date }> = [];
+
+    sortedMeasures.forEach(m => {
       const value = m[this.valueKey];
       if (value === null || value === undefined) return;
 
       const timestamp = new Date(m.timestamp);
-      const hours = timestamp.getHours();
-      const minutes = timestamp.getMinutes();
+      const hour = timestamp.getUTCHours();
+      const minute = timestamp.getUTCMinutes();
+      const timeDecimal = hour + minute / 60;
 
-      const label = timestamp.toLocaleTimeString('fr-FR', {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false
+      dataPoints.push({
+        x: timeDecimal,
+        y: Number(value),
+        timestamp: timestamp
       });
-      chartLabels.push(label);
-      chartValues.push(Number(value));
     });
 
-    const displayLabels: string[] = [];
-    for (let h = 0; h <= 23; h++) {
-      displayLabels.push(`${h.toString().padStart(2,'0')}:00`);
-    }
+    console.log('📊 Points de données:', dataPoints.length);
 
-    this.buildChart(chartLabels, chartValues, displayLabels);
+    this.buildChart(dataPoints);
   }
 
-  private buildChart(chartLabels: string[], chartValues: (number | null)[], displayLabels: string[]) {
+  private buildChart(dataPoints: Array<{ x: number; y: number; timestamp: Date }>) {
     const meta = this.getMetaLabel(this.valueKey);
 
     this.chartData = {
-      labels: chartLabels,
       datasets: [
         {
-          data: chartValues,
+          data: dataPoints.map(p => ({ x: p.x, y: p.y })),
           label: meta.label,
           borderColor: this.color,
           backgroundColor: 'transparent',
           tension: 0.3,
           spanGaps: true,
-          pointRadius: 2,
-          pointHoverRadius: 4,
-          borderWidth: 2
+          pointRadius: 3,
+          pointHoverRadius: 6,
+          borderWidth: 2,
+          parsing: false
         }
       ]
     };
@@ -121,49 +122,76 @@ export class SensorGraph implements OnChanges {
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
-        legend: { display: true, position: 'top' },
+        legend: {
+          display: true,
+          position: 'top'
+        },
         tooltip: {
-          mode: 'index',
+          mode: 'nearest',
           intersect: false,
           callbacks: {
+            title: (context) => {
+              const index = context[0].dataIndex;
+              if (index >= 0 && index < dataPoints.length) {
+                const timestamp = dataPoints[index].timestamp;
+                return `${timestamp.getUTCHours().toString().padStart(2,'0')}:${timestamp.getUTCMinutes().toString().padStart(2,'0')}`;
+              }
+              return '';
+            },
             label: (context) => {
-              const label = context.dataset.label || '';
               const value = context.parsed.y;
-              return `${label}: ${value !== null ? value.toFixed(2) : 'N/A'} ${meta.unit}`;
+              // ✅ Vérification complète pour TypeScript
+              if (value === null || value === undefined || typeof value !== 'number') {
+                return `${meta.label}: N/A`;
+              }
+              return `${meta.label}: ${value.toFixed(2)} ${meta.unit}`;
             }
           }
         }
       },
       scales: {
         x: {
-          title: { display: true, text: 'Heure', font: { size: 14, weight: 'bold' } },
+          type: 'linear',
+          min: 0,
+          title: {
+            display: true,
+            text: 'Heure',
+            font: { size: 14, weight: 'bold' }
+          },
           ticks: {
-            autoSkip: false,
+            stepSize: 1,
+            callback: (value) => {
+              const hour = Math.floor(Number(value));
+              if (hour === 24) return '';
+              return `${hour.toString().padStart(2, '0')}:00`;
+            },
             maxRotation: 0,
             minRotation: 0,
-            callback: (value, index) => {
-              const label = this.chartData.labels![index] as string;
-              // Afficher uniquement les heures complètes
-              return label.endsWith('00') ? label : '';
-            }
+            autoSkip: false
           },
-          grid: { display: true, color: 'rgba(0, 0, 0, 0.05)' }
+          grid: {
+            display: true,
+            color: 'rgba(0, 0, 0, 0.05)'
+          }
         },
         y: {
-          title: { display: true, text: meta.unit, font: { size: 14, weight: 'bold' } },
+          title: {
+            display: true,
+            text: meta.unit,
+            font: { size: 14, weight: 'bold' }
+          },
           beginAtZero: false,
-          grid: { display: true, color: 'rgba(0, 0, 0, 0.05)' }
+          grid: {
+            display: true,
+            color: 'rgba(0, 0, 0, 0.05)'
+          }
         }
       },
-      interaction: { mode: 'index', intersect: false }
+      interaction: {
+        mode: 'nearest',
+        intersect: false
+      }
     };
-  }
-
-  private getDayKey(date: Date): keyof Room['schedule'] {
-    const days: (keyof Room['schedule'])[] = [
-      'sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'
-    ];
-    return days[date.getDay()];
   }
 
   getMetaLabel(key: string) {

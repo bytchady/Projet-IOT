@@ -18,11 +18,22 @@
               </div>
               <div class="mb-3">
                 <label for="password" class="form-label">Mot de passe</label>
-                <input
-                  type="password"
-                  id="password"
-                  class="form-control bg-body text-body"
-                  formControlName="password" required>
+
+                <div class="input-group">
+                  <input
+                    [type]="showPassword ? 'text' : 'password'"
+                    id="password"
+                    class="form-control bg-body text-body"
+                    formControlName="password"
+                    required>
+
+                  <button
+                    type="button"
+                    class="btn btn-outline-secondary"
+                    (click)="togglePassword()">
+                    <i class="bi" [ngClass]="showPassword ? 'bi-eye-slash' : 'bi-eye'"></i>
+                  </button>
+                </div>
               </div>
               <button
                 type="submit"

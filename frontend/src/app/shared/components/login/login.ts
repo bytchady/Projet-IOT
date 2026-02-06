@@ -5,16 +5,19 @@ import { ServerMessagesServices } from '../../../services/server-messages/server
 import { Footer } from '../footer/footer';
 import { Header } from '../header/header';
 import { Router } from '@angular/router';
+import {NgClass} from '@angular/common';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [ReactiveFormsModule, Footer, Header],
+  imports: [ReactiveFormsModule, Footer, Header, NgClass],
   templateUrl: './login.html',
   styleUrls: ['./login.scss'],
 })
 export class Login implements OnInit {
   loginForm!: FormGroup;
+  showPassword = false;
+
 
   constructor(
     private fb: FormBuilder,
@@ -29,6 +32,10 @@ export class Login implements OnInit {
       username: ['', Validators.required],
       password: ['', Validators.required]
     });
+  }
+
+  togglePassword() {
+    this.showPassword = !this.showPassword;
   }
 
   onSubmit() {
@@ -48,7 +55,7 @@ export class Login implements OnInit {
         }
       },
       error: (err) => {
-        const message = err.error?.message || "Erreur de connexion";
+        const message = err.error?.message || "Erreur serveur interne";
         this.serverMessageService.showMessage(message, true);
       }
     });
